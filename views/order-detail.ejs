@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalle del pedido #<%= order.id %> - Bella Napoli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="bg-stone-50 min-h-screen">
+  <header class="bg-red-700 text-white p-4 shadow-md">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/" class="text-2xl font-bold font-serif">🍕 Bella Napoli</a>
+      <a href="/" class="text-white/80 hover:text-white">Volver</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold font-serif text-stone-800 mb-6">Detalle del pedido #<%= order.id %></h1>
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
+      <p><strong>Fecha:</strong> <%= new Date(order.created_at).toLocaleString() %></p>
+      <p><strong>Recogida:</strong> <%= order.pickup_time %></p>
+      <p><strong>Método de pago:</strong> <%= order.payment_method %></p>
+      <p class="flex items-center gap-2">
+        <strong>Estado del pedido:</strong>
+        <span class="px-2 py-1 text-xs rounded-full 
+            <%= order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+            order.status === 'ready' ? 'bg-green-100 text-green-700' : 
+            'bg-gray-100 text-gray-700' %>">
+            <%= order.status === 'pending' ? 'Pendiente' : 
+            order.status === 'ready' ? 'Listo' : 'Entregado' %>
+        </span>
+        </p>
+        <p class="flex items-center gap-2">
+        <strong>Pago:</strong>
+        <span class="px-2 py-1 text-xs rounded-full 
+            <%= order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 
+            order.payment_status === 'rejected' ? 'bg-red-100 text-red-700' : 
+            order.payment_status === 'submitted' ? 'bg-blue-100 text-blue-700' : 
+            'bg-yellow-100 text-yellow-700' %>">
+            <%= order.payment_status === 'paid' ? 'Pagado' : 
+            order.payment_status === 'rejected' ? 'Rechazado' : 
+            order.payment_status === 'submitted' ? 'Pago reportado' : 
+            'Pago pendiente' %>
+        </span>
+        </p>
+        <p><strong>Total:</strong> $<%= order.total %></p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-xl font-bold font-serif mb-4">Artículos</h2>
+      <ul class="space-y-2">
+        <% items.forEach(item => { %>
+          <li>
+            <%= item.quantity %>x <%= item.pizza_name %> (<%= item.size_label %>)
+            <% if (item.toppings.length) { %> + <%= item.toppings.join(', ') %><% } %>
+            = $<%= item.line_total.toFixed(2) %>
+          </li>
+        <% }) %>
+        <% bebidas.forEach(b => { %>
+          <li><%= b.quantity %>x <%= b.name %> = $<%= b.line_total.toFixed(2) %></li>
+        <% }) %>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

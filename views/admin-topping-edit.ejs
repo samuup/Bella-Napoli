@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Ingrediente - Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="bg-stone-50 flex">
+  <%- include('admin-sidebar') %>
+  <div class="ml-64 p-8 flex-1">
+    <h1 class="text-4xl font-bold font-serif text-stone-800 mb-8">Editar Ingrediente</h1>
+    <% if (error_msg && error_msg.length > 0) { %>
+      <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-2xl mb-6">
+        <%= error_msg[0] %>
+      </div>
+    <% } %>
+    <form action="/admin/toppings/edit/<%= topping.id %>" method="POST" class="bg-white rounded-2xl shadow-md p-6 max-w-md">
+      <%- include('csrf') %>
+      <label class="block mb-4">
+        <span class="text-stone-700 font-medium">Nombre</span>
+        <input type="text" name="name" required value="<%= topping.name %>" class="mt-1 block w-full border border-stone-300 rounded-xl p-3 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+        <p id="nameError" class="text-red-500 text-xs mt-1 hidden">Solo letras y espacios permitidos.</p>
+      </label>
+      <label class="block mb-4">
+        <span class="text-stone-700 font-medium">Precio extra</span>
+        <div class="relative mt-1">
+          <span class="absolute inset-y-0 left-3 flex items-center text-stone-500">$</span>
+          <input type="number" name="extra_price" id="toppingPrice" required min="0" step="0.01"
+                 class="w-full px-4 py-3 pl-8 h-12 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+          <p id="toppingPriceError" class="text-red-500 text-xs mt-1 hidden">El precio debe ser mayor o igual a 0.</p>
+        </div>
+      </label>
+      <div class="flex space-x-4">
+        <button type="submit" class="bg-red-700 text-white font-bold py-2 px-6 rounded-full hover:bg-red-800 hover:shadow-lg transition">Guardar</button>
+        <a href="/admin/toppings" class="bg-stone-200 text-stone-700 font-medium py-2 px-6 rounded-full hover:bg-stone-300 transition">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const nameInput = document.getElementById('toppingName');
+    const priceInput = document.getElementById('toppingPrice');
+    const nameError = document.getElementById('nameError');
+    const priceError = document.getElementById('priceError');
+
+    // Validar nombre: solo letras (incluyendo acentos y ñ) y espacios
+    function validateName() {
+      const nameRegex = /^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/;
+      const value = nameInput.value.trim();
+      if (value.length > 0 && !nameRegex.test(value)) {
+        nameError.classList.remove('hidden');
+        nameInput.classList.add('border-red-500');
+        return false;
+      } else {
+        nameError.classList.add('hidden');
+        nameInput.classList.remove('border-red-500');
+        return true;
+      }
+    }
+
+    // Validar precio: no vacío, número no negativo
+    function validatePrice() {
+      const price = parseFloat(priceInput.value);
+      if (isNaN(price) || price < 0) {
+        priceError.classList.remove('hidden');
+        priceInput.classList.add('border-red-500');
+        return false;
+      } else {
+        priceError.classList.add('hidden');
+        priceInput.classList.remove('border-red-500');
+        return true;
+      }
+    }
+
+    nameInput.addEventListener('blur', validateName);
+    priceInput.addEventListener('blur', validatePrice);
+
+    // Prevenir envío si hay errores
+    document.querySelector('form').addEventListener('submit', function(e) {
+      const isNameValid = validateName();
+      const isPriceValid = validatePrice();
+      if (!isNameValid || !isPriceValid) {
+        e.preventDefault();
+        // Opcional: hacer scroll al primer error
+        if (!isNameValid) nameInput.focus();
+        else if (!isPriceValid) priceInput.focus();
+      }
+    });
+
+    nameInput.addEventListener('input', function() {
+      if (validateName()) {
+        nameError.classList.add('hidden');
+        nameInput.classList.remove('border-red-500');
+      }
+    });
+
+    priceInput.addEventListener('input', function() {
+      if (validatePrice()) {
+        priceError.classList.add('hidden');
+        priceInput.classList.remove('border-red-500');
+      }
+    });
+
+    priceInput.addEventListener('keydown', function(e) {
+      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Escape', 'Home', 'End'];
+      if (allowedKeys.includes(e.key)) return;
+      if (e.key === '.' && !this.value.includes('.')) return;
+      if (!/^\d$/.test(e.key)) e.preventDefault();
+    });
+
+    priceInput.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+      let cleaned = pasted.replace(/[^0-9.]/g, '');
+      const parts = cleaned.split('.');
+      if (parts.length > 1) cleaned = parts[0] + '.' + parts.slice(1).join('');
+      const num = parseFloat(cleaned);
+      if (!isNaN(num) && num >= 0) {
+        this.value = num;
+      } else {
+        this.value = '';
+      }
+      validatePrice();
+    });
+
+  </script>
+
+</body>
+</html>

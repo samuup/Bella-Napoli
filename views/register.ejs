@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro - Bella Napoli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, .font-serif { font-family: 'Playfair Display', serif; }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+    .shake { animation: shake 0.3s ease-in-out; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-up { animation: fadeInUp 0.6s ease-out; }
+    .bg-texture {
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ef4444' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+  </style>
+</head>
+<body class="bg-stone-50 min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 via-stone-50 to-stone-100 bg-texture">
+  <div class="w-full max-w-md fade-in-up">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-t-4 border-red-600">
+      <div class="p-8 md:p-10">
+        <div class="text-center mb-6">
+          <a href="/" class="inline-flex items-center justify-center space-x-2 mb-4">
+            <span class="text-5xl">🍕</span>
+          </a>
+          <h1 class="text-3xl font-bold font-serif text-stone-800">Bella Napoli</h1>
+          <p class="text-stone-500 mt-1">Crea tu cuenta para pedir</p>
+          <div class="flex justify-center mt-4">
+            <div class="w-16 h-0.5 bg-red-400 rounded-full"></div>
+          </div>
+        </div>
+
+        <% if (error) { %>
+          <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
+            <%= error %>
+          </div>
+        <% } %>
+
+        <form action="/register" method="POST" id="registerForm" class="space-y-5">
+          <%- include('csrf') %>
+          <!-- Nombre -->
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
+            <input type="text" name="name" id="nameInput" required
+                   class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                   placeholder="Tu nombre de usuario">
+            <p id="nameError" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <!-- Correo -->
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Correo electrónico</label>
+            <input type="email" name="email" id="emailInput" required
+                   class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                   placeholder="tu@correo.com">
+            <p id="emailError" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <!-- Contraseña -->
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Contraseña</label>
+            <div class="relative">
+              <input type="password" name="password" id="passwordInput" required
+                     class="w-full px-4 py-3 pr-12 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                     placeholder="••••••••">
+              <button type="button" id="togglePassword"
+                      class="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 transition"
+                      aria-label="Mostrar contraseña">
+                <svg id="eyeOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg id="eyeClosed" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              </button>
+            </div>
+            <p id="maxLengthError" class="text-red-500 text-xs mt-1 hidden font-medium"></p>
+            <div class="mt-2 space-y-1">
+              <div class="flex items-center text-xs text-stone-500" id="req-length">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full border border-stone-300 mr-2 text-[10px]">○</span>
+                Mínimo 8 caracteres
+              </div>
+              <div class="flex items-center text-xs text-stone-500" id="req-uppercase">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full border border-stone-300 mr-2 text-[10px]">○</span>
+                Al menos una mayúscula
+              </div>
+              <div class="flex items-center text-xs text-stone-500" id="req-number">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full border border-stone-300 mr-2 text-[10px]">○</span>
+                Al menos un número
+              </div>
+              <div class="flex items-center text-xs text-stone-500" id="req-special">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full border border-stone-300 mr-2 text-[10px]">○</span>
+                Al menos un carácter especial (!@#$%^&*)
+              </div>
+            </div>
+          </div>
+          <!-- Repetir contraseña -->
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Repetir contraseña</label>
+            <div class="relative">
+              <input type="password" name="password2" id="password2Input" required
+                     class="w-full px-4 py-3 pr-12 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                     placeholder="••••••••">
+              <button type="button" id="togglePassword2"
+                      class="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 transition"
+                      aria-label="Mostrar contraseña">
+                <svg id="eyeOpen2" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg id="eyeClosed2" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              </button>
+            </div>
+            <p id="matchMessage" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <button type="submit" id="submitBtn"
+                  class="w-full bg-red-700 hover:bg-red-800 text-white font-semibold py-3 rounded-full shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            Crear cuenta
+          </button>
+        </form>
+
+        <p class="text-center text-sm text-stone-500 mt-6">
+          ¿Ya tienes cuenta? 
+          <a href="/login" class="text-red-600 hover:text-red-700 font-medium underline underline-offset-2">Inicia sesión</a>
+        </p>
+      </div>
+    </div>
+
+    <p class="text-center text-sm text-stone-400 mt-6">
+      <a href="/" class="hover:text-stone-600 transition">← Volver al menú</a>
+    </p>
+  </div>
+
+  <script>
+    // --- Elementos del DOM ---
+    const nameInput = document.getElementById('nameInput');
+    const nameError = document.getElementById('nameError');
+    const emailInput = document.getElementById('emailInput');
+    const emailError = document.getElementById('emailError');
+    const passwordInput = document.getElementById('passwordInput');
+    const togglePassword = document.getElementById('togglePassword');
+    const eyeOpen = document.getElementById('eyeOpen');
+    const eyeClosed = document.getElementById('eyeClosed');
+    const password2Input = document.getElementById('password2Input');
+    const togglePassword2 = document.getElementById('togglePassword2');
+    const eyeOpen2 = document.getElementById('eyeOpen2');
+    const eyeClosed2 = document.getElementById('eyeClosed2');
+    const maxLengthError = document.getElementById('maxLengthError');
+    const matchMessage = document.getElementById('matchMessage');
+    const submitBtn = document.getElementById('submitBtn');
+    const reqLength = document.getElementById('req-length');
+    const reqUppercase = document.getElementById('req-uppercase');
+    const reqNumber = document.getElementById('req-number');
+    const reqSpecial = document.getElementById('req-special');
+    let nameMaxErrorVisible = false;
+
+    // --- Whitelist de correo ---
+    const allowedDomains = [
+      'gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'yahoo.es'
+    ];
+
+    // --- Mostrar/ocultar contraseñas ---
+    togglePassword.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      eyeOpen.classList.toggle('hidden', !isPassword);
+      eyeClosed.classList.toggle('hidden', isPassword);
+    });
+    togglePassword2.addEventListener('click', () => {
+      const isPassword = password2Input.type === 'password';
+      password2Input.type = isPassword ? 'text' : 'password';
+      eyeOpen2.classList.toggle('hidden', !isPassword);
+      eyeClosed2.classList.toggle('hidden', isPassword);
+    });
+
+    // --- Bloquear espacios en contraseñas ---
+    passwordInput.addEventListener('keydown', (e) => { if (e.key === ' ') e.preventDefault(); });
+    password2Input.addEventListener('keydown', (e) => { if (e.key === ' ') e.preventDefault(); });
+
+    // --- Validación de nombre ---
+    function validateName(showErrors = false) {
+      const name = nameInput.value;
+      const nameRegex = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]+$/;
+      if (name.length === 0) {
+        if (showErrors) {
+          nameError.textContent = '¡El nombre es obligatorio!';
+          nameError.classList.remove('hidden');
+          nameInput.classList.add('border-red-500');
+        }
+        return false;
+      }
+      if (!nameRegex.test(name)) {
+        if (showErrors) {
+          nameError.textContent = '¡Solo letras y números, sin espacios ni caracteres especiales!';
+          nameError.classList.remove('hidden');
+          nameInput.classList.add('border-red-500');
+        }
+        return false;
+      }
+      if (!nameMaxErrorVisible) {
+        nameError.classList.add('hidden');
+        nameInput.classList.remove('border-red-500');
+      }
+      return true;
+    }
+
+    // --- Validación de correo ---
+    function validateEmail(showErrors = false) {
+      const email = emailInput.value.trim().toLowerCase();
+      if (email === '') {
+        if (showErrors) {
+          emailError.textContent = '¡El correo electrónico es obligatorio!';
+          emailError.classList.remove('hidden');
+          emailInput.classList.add('border-red-500');
+        }
+        return false;
+      }
+      const emailFormatRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailFormatRegex.test(email)) {
+        if (showErrors) {
+          emailError.textContent = '¡Formato de correo inválido! (ejemplo: tu@correo.com)';
+          emailError.classList.remove('hidden');
+          emailInput.classList.add('border-red-500');
+        }
+        return false;
+      }
+      const domain = email.substring(email.lastIndexOf('@') + 1);
+      const isValidDomain = allowedDomains.includes(domain);
+      if (showErrors && !isValidDomain) {
+        emailError.textContent = '¡Solo se permiten correos de proveedores comunes! (Gmail, Outlook, Yahoo)';
+        emailError.classList.remove('hidden');
+        emailInput.classList.add('border-red-500');
+      } else if (showErrors) {
+        emailError.classList.add('hidden');
+        emailInput.classList.remove('border-red-500');
+      }
+      return isValidDomain;
+    }
+
+    // --- Validación de contraseña (fortaleza + espacios) ---
+    function setRequirement(element, fulfilled) {
+      const circle = element.querySelector('span');
+      if (fulfilled) {
+        circle.innerHTML = '✓';
+        circle.classList.add('bg-green-500', 'text-white', 'border-green-500');
+        circle.classList.remove('border-stone-300');
+        element.classList.remove('text-stone-500');
+        element.classList.add('text-green-600');
+      } else {
+        circle.innerHTML = '○';
+        circle.classList.remove('bg-green-500', 'text-white', 'border-green-500');
+        circle.classList.add('border-stone-300');
+        element.classList.add('text-stone-500');
+        element.classList.remove('text-green-600');
+      }
+    }
+
+    function enforceMaxLength() {
+      let pwd = passwordInput.value;
+      if (pwd.includes(' ')) {
+        pwd = pwd.replace(/\s/g, '');
+        passwordInput.value = pwd;
+      }
+      if (pwd.length > 20) {
+        passwordInput.value = pwd.slice(0, 20);
+        maxLengthError.textContent = '¡Máximo 20 caracteres!';
+        maxLengthError.classList.remove('hidden');
+        passwordInput.classList.add('border-red-500', 'shake');
+        clearTimeout(window.maxLengthTimeout);
+        window.maxLengthTimeout = setTimeout(() => {
+          maxLengthError.classList.add('hidden');
+          passwordInput.classList.remove('border-red-500', 'shake');
+        }, 2000);
+      }
+    }
+
+    function enforceNameMaxLength() {
+      let name = nameInput.value;
+      if (name.length > 30) {
+        nameInput.value = name.slice(0, 30);
+        nameMaxErrorVisible = true;
+        nameError.textContent = '¡Máximo 30 caracteres!';
+        nameError.classList.remove('hidden');
+        nameInput.classList.add('border-red-500', 'shake');
+        clearTimeout(window.nameMaxTimeout);
+        window.nameMaxTimeout = setTimeout(() => {
+          nameMaxErrorVisible = false;
+          nameError.classList.add('hidden');
+          nameInput.classList.remove('border-red-500', 'shake');
+          validateName(false);
+          updateSubmitButton();
+        }, 2000);
+      }
+    }
+
+    function validatePassword(showErrors = false) {
+      const pwd = passwordInput.value;
+      if (pwd.length === 0) {
+        if (showErrors) {
+          maxLengthError.textContent = '¡La contraseña es obligatoria!';
+          maxLengthError.classList.remove('hidden');
+          passwordInput.classList.add('border-red-500');
+        }
+        setRequirement(reqLength, false);
+        setRequirement(reqUppercase, false);
+        setRequirement(reqNumber, false);
+        setRequirement(reqSpecial, false);
+        return false;
+      }
+
+      enforceMaxLength();
+
+      const lengthValid = pwd.length >= 8 && pwd.length <= 20;
+      const uppercaseValid = /[A-Z]/.test(pwd);
+      const numberValid = /[0-9]/.test(pwd);
+      const specialValid = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+
+      setRequirement(reqLength, lengthValid);
+      setRequirement(reqUppercase, uppercaseValid);
+      setRequirement(reqNumber, numberValid);
+      setRequirement(reqSpecial, specialValid);
+
+      if (showErrors && !(lengthValid && uppercaseValid && numberValid && specialValid)) {
+        maxLengthError.textContent = '¡La contraseña no cumple los requisitos de seguridad!';
+        maxLengthError.classList.remove('hidden');
+        passwordInput.classList.add('border-red-500');
+      } else if (showErrors) {
+        maxLengthError.classList.add('hidden');
+        passwordInput.classList.remove('border-red-500');
+      }
+
+      return lengthValid && uppercaseValid && numberValid && specialValid;
+    }
+
+    function checkPasswordsMatch(showErrors = false) {
+      if (password2Input.value === '') {
+        if (showErrors) {
+          matchMessage.textContent = '¡Debes repetir la contraseña!';
+          matchMessage.classList.remove('hidden');
+          password2Input.classList.add('border-red-500');
+        }
+        return false;
+      }
+      if (passwordInput.value !== password2Input.value) {
+        if (showErrors) {
+          matchMessage.textContent = '¡Las contraseñas no coinciden!';
+          matchMessage.classList.remove('hidden');
+          password2Input.classList.add('border-red-500');
+        }
+        return false;
+      }
+      if (showErrors) {
+        matchMessage.classList.add('hidden');
+        password2Input.classList.remove('border-red-500');
+      }
+      return true;
+    }
+
+    function updateSubmitButton() {
+      const allValid = validateName(false) && validateEmail(false) && validatePassword(false) && checkPasswordsMatch(false);
+      submitBtn.disabled = !allValid;
+    }
+
+    // --- Eventos de nombre ---
+    nameInput.addEventListener('input', () => {
+      enforceNameMaxLength();
+      validateName(false);
+      updateSubmitButton();
+    });
+    nameInput.addEventListener('blur', () => {
+      validateName(true);
+      updateSubmitButton();
+    });
+    nameInput.addEventListener('focus', () => {
+      if (!nameMaxErrorVisible) {
+        nameError.classList.add('hidden');
+        nameInput.classList.remove('border-red-500');
+      }
+    });
+    nameInput.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+      const cleaned = pasted.replace(/\s/g, '').replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]/g, '');
+      const truncated = cleaned.slice(0, 30);
+      nameInput.value = truncated;
+      enforceNameMaxLength();
+      validateName(false);
+      updateSubmitButton();
+    });
+
+    // --- Eventos de correo ---
+    emailInput.addEventListener('input', () => { validateEmail(false); updateSubmitButton(); });
+    emailInput.addEventListener('blur', () => { validateEmail(true); updateSubmitButton(); });
+    emailInput.addEventListener('focus', () => { emailError.classList.add('hidden'); emailInput.classList.remove('border-red-500'); });
+
+    // --- Eventos de contraseña ---
+    passwordInput.addEventListener('input', () => { validatePassword(false); checkPasswordsMatch(false); updateSubmitButton(); });
+    passwordInput.addEventListener('blur', () => { validatePassword(true); checkPasswordsMatch(false); updateSubmitButton(); });
+    passwordInput.addEventListener('focus', () => { maxLengthError.classList.add('hidden'); passwordInput.classList.remove('border-red-500'); });
+
+    // --- Eventos de repetir contraseña ---
+    password2Input.addEventListener('input', () => { checkPasswordsMatch(false); updateSubmitButton(); });
+    password2Input.addEventListener('blur', () => { checkPasswordsMatch(true); updateSubmitButton(); });
+    password2Input.addEventListener('focus', () => { matchMessage.classList.add('hidden'); password2Input.classList.remove('border-red-500'); });
+
+    // --- Validación final al enviar ---
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      const nameValid = validateName(true);
+      const emailValid = validateEmail(true);
+      const passwordValid = validatePassword(true);
+      const passwordsMatch = checkPasswordsMatch(true);
+      if (!nameValid || !emailValid || !passwordValid || !passwordsMatch) {
+        e.preventDefault();
+        alert('Revisa los campos marcados en rojo.');
+      }
+    });
+
+    // Inicializar
+    validatePassword(false);
+    updateSubmitButton();
+  </script>
+</body>
+</html>

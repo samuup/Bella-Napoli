@@ -1,0 +1,141 @@
+<nav class="bg-stone-900 text-white w-64 min-h-screen p-4 fixed flex flex-col">
+  <div class="mb-8">
+    <a href="/admin" class="flex items-center gap-2">
+      <span class="text-3xl">🍕</span>
+      <h2 class="text-2xl font-bold font-serif">Bella Napoli</h2>
+    </a>
+    <p class="text-sm text-stone-400 mt-1">Administración</p>
+  </div>
+  
+  <ul class="space-y-1 flex-1">
+    <li>
+      <a href="/admin" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="/admin/orders" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        Pedidos
+      </a>
+    </li>
+    <li>
+      <a href="/admin/pizzas" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Pizzas
+      </a>
+    </li>
+    <li>
+      <a href="/admin/sizes" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        Tamaños
+      </a>
+    </li>
+    <li>
+      <a href="/admin/toppings" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+        Ingredientes
+      </a>
+    </li>
+    <li>
+      <a href="/admin/bebidas" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1l-1-2H8L7 7H4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4"/></svg>
+        Bebidas
+      </a>
+    </li>
+  </ul>
+
+  <div class="pt-4 border-t border-stone-700 space-y-1">
+    <a href="/" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm">
+      🏠 Volver a la tienda
+    </a>
+    <a href="/logout" class="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-stone-800 transition text-sm text-red-400 hover:text-red-300">
+      Cerrar sesión
+    </a>
+  </div>
+</nav>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // Función showToast (debe ser global)
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    const bg = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+    toast.className = `${bg} text-white px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 animate-fade-in`;
+    toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+  
+  // ===================== SOCKET.IO =====================
+  const socket = io();
+
+  // ===================== SONIDO BEEP =====================
+  let audioCtx = null;
+
+  function unlockAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // Opcional: reproducir un silencio corto para activarlo
+      const buffer = audioCtx.createBuffer(1, 1, 22050);
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+      source.start(0);
+      console.log('Audio desbloqueado');
+    }
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+  }
+
+  document.addEventListener('click', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+
+  function playBeep() {
+    if (!audioCtx) {
+      console.log('Audio no desbloqueado aún');
+      return;
+    }
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 880; // frecuencia del beep
+    gainNode.gain.value = 0.1;
+    oscillator.start();
+    setTimeout(() => oscillator.stop(), 300);
+  }
+
+  // ===================== CONTADOR DE PEDIDOS =====================
+  let pendingCount = Number('<%= pendingOrdersCount %>');
+  const pedidosLink = document.querySelector('a[href="/admin/orders"]');
+
+  function updateBadge() {
+    if (!pedidosLink) return;
+    let badge = pedidosLink.querySelector('.badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'badge bg-red-500 text-white text-xs rounded-full px-2 py-0.5 ml-auto';
+      pedidosLink.appendChild(badge);
+    }
+    if (pendingCount > 0) {
+      badge.textContent = pendingCount;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  updateBadge();
+
+  // ===================== NOTIFICACIONES =====================
+  socket.on('nuevo_pedido', (order) => {
+    pendingCount += 1;
+    updateBadge();
+    showToast(`Nuevo pedido de ${order.customer_name} por $${order.total}`, 'success');
+    playBeep();
+  });
+</script>

@@ -1,0 +1,4 @@
+node_modules/
+pizzeria.db
+.env
+uploads/

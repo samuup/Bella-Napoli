@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍕 Bella Napoli - Pizzería Artesanal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+    .hero-pattern { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,160L48,176C96,192,192,224,288,229.3C384,235,480,213,576,186.7C672,160,768,128,864,128C960,128,1056,160,1152,176C1248,192,1344,192,1392,192L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>'); background-size: cover; background-position: bottom; }
+  </style>
+</head>
+<body class="bg-stone-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-red-700 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <a href="/" class="flex items-center space-x-2">
+        <span class="text-3xl">🍕</span>
+        <h1 class="text-2xl font-bold font-serif tracking-wide">Bella Napoli</h1>
+      </a>
+      <nav class="flex items-center space-x-6">
+        <a href="/" class="hover:text-red-200 transition">Menú</a>
+        <div class="relative">
+          <button id="notificationBell" class="text-white hover:text-red-200 transition relative">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
+          </button>
+          <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl overflow-hidden z-50">
+            <div class="bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
+              <h3 class="font-bold font-serif text-stone-800 text-lg">Notificaciones</h3>
+              <button id="clearAllNotifications" class="text-stone-500 hover:text-red-600 text-xs underline">Limpiar todas</button>
+            </div>
+            <ul id="notificationList" class="max-h-60 overflow-y-auto divide-y divide-stone-100">
+              <!-- Las notificaciones se cargarán aquí por JavaScript -->
+            </ul>
+          </div>
+        </div>
+        <% if (currentUser) { %>
+          <div class="flex items-center space-x-4">
+            <% if (currentUser.role === 'admin') { %>
+              <a href="/admin" class="bg-white/20 text-white border border-white/50 px-4 py-2 rounded-full font-semibold hover:bg-white hover:text-red-700 transition shadow">⚙️ Admin</a>
+            <% } %>
+            <a href="/order" class="bg-white text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Hacer pedido</a>
+            <div class="relative group">
+              <button class="flex items-center space-x-1 text-white hover:text-red-200 transition">
+                <span>Hola, <%= currentUser.name.split(' ')[0] %></span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+              <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <a href="/logout" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cerrar sesión</a>
+              </div>
+            </div>
+          </div>
+        <% } else { %>
+          <a href="/login" class="bg-white text-red-700 px-6 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Iniciar sesión</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero-pattern bg-red-600 text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <h2 class="text-5xl md:text-6xl font-bold font-serif mb-6">El auténtico sabor italiano</h2>
+      <p class="text-xl md:text-2xl mb-10 text-red-100 max-w-2xl mx-auto">Pizzas artesanales horneadas en horno de leña con ingredientes frescos</p>
+      <% if (currentUser) { %>
+        <a href="/order" class="inline-block bg-white text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Hacer mi pedido</a>
+      <% } else { %>
+        <a href="/login" class="inline-block bg-white text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Empezar a pedir</a>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- Menú de pizzas -->
+  <main class="max-w-7xl mx-auto px-4 py-16">
+    <h2 class="text-4xl font-bold font-serif text-center mb-12 text-stone-800">Nuestras Pizzas</h2>
+    
+    <div class="grid md:grid-cols-2 gap-8">
+      <% pizzas.forEach(pizza => { %>
+        <div class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+          <div class="p-6 flex justify-between items-start">
+            <div class="flex-1">
+              <h3 class="text-2xl font-bold text-stone-800 mb-2"><%= pizza.name %></h3>
+              <p class="text-stone-500 mb-4"><%= pizza.description %></p>
+              <% if (prices[pizza.id]) { %>
+                <% const minPrice = Math.min(...Object.values(prices[pizza.id])); %>
+                <div class="flex items-baseline space-x-2">
+                  <span class="text-sm text-stone-400">Desde</span>
+                  <span class="text-3xl font-bold text-red-600">$<%= minPrice.toFixed(2) %></span>
+                </div>
+              <% } %>
+            </div>
+            <div class="text-7xl ml-4 transform group-hover:scale-110 transition">🍕</div>
+          </div>
+          <div class="px-6 pb-6">
+            <div class="flex flex-wrap gap-2 text-xs text-stone-400">
+              <% sizes.forEach(size => { %>
+                <span class="bg-stone-100 px-2 py-1 rounded-full"><%= size.label %></span>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-stone-900 text-stone-400 py-8">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <p>© 2026 Bella Napoli · Todos los derechos reservados</p>
+    </div>
+  </footer>
+
+  <script id="user-data" type="application/json"><%- JSON.stringify({ userId: currentUser ? currentUser.id : null, csrfToken: csrfToken }) %></script>
+  <script id="notifications-data" type="application/json"><%- JSON.stringify(notifications || []) %></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Obtener variables del servidor de forma segura
+    const userData = JSON.parse(document.getElementById('user-data').textContent);
+    const userId = userData.userId;
+    const csrfToken = userData.csrfToken;
+    const notificationsInitial = JSON.parse(document.getElementById('notifications-data').textContent);
+
+    // Copia local de notificaciones
+    let notifications = notificationsInitial;
+    let unreadCount = notifications.filter(n => n.is_read === 0).length;
+
+    const socket = io();
+
+    // Toast container
+    if (!document.getElementById('toastContainer')) {
+      const div = document.createElement('div');
+      div.id = 'toastContainer';
+      div.className = 'fixed bottom-6 right-6 space-y-2 z-50';
+      document.body.appendChild(div);
+    }
+
+    function showUserToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? 'bg-green-600' : 'bg-blue-600';
+      toast.className = `${bg} text-white px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
+      toast.innerHTML = `<span>${type === 'success' ? '✅' : '🔔'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function updateBadge() {
+      const badge = document.getElementById('notificationBadge');
+      if (!badge) return;
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById('notificationList');
+      list.innerHTML = '';
+
+      if (notifications.length === 0) {
+        list.innerHTML = '<li class="p-3 text-sm text-stone-400">No tienes notificaciones.</li>';
+        return;
+      }
+
+      notifications.forEach(n => {
+        const li = document.createElement('li');
+        li.className = 'px-4 py-3 hover:bg-stone-50 transition cursor-pointer';
+        li.dataset.id = n.id;
+        li.dataset.orderId = n.order_id;
+
+        li.addEventListener('click', () => openNotification(n));
+
+        li.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <p class="text-sm text-stone-700">${n.message}</p>
+              <span class="text-xs text-stone-400">${new Date(n.created_at).toLocaleString()}</span>
+            </div>
+            <button class="delete-notification ml-2 text-red-400 hover:text-red-600" data-id="${n.id}">✕</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+
+      document.querySelectorAll('.delete-notification').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteNotification(btn.dataset.id);
+        });
+      });
+    }
+
+    async function openNotification(notification) {
+      if (notification.is_read === 0) {
+        try {
+          await fetch(`/notification/${notification.id}/read`, { method: 'POST', headers: { 'CSRF-Token': csrfToken } });
+          notification.is_read = 1;
+          unreadCount = Math.max(0, unreadCount - 1);
+          updateBadge();
+        } catch (err) {
+          console.error('Error marcando leída', err);
+        }
+      }
+      if (notification.order_id) {
+        window.location.href = `/order-detail/${notification.order_id}`;
+      }
+    }
+
+    async function deleteNotification(id) {
+      try {
+        await fetch(`/notification/${id}/delete`, { method: 'POST', headers: { 'CSRF-Token': csrfToken } });
+        const notif = notifications.find(n => n.id == id);
+        if (notif && notif.is_read === 0) {
+          unreadCount = Math.max(0, unreadCount - 1);
+        }
+        notifications = notifications.filter(n => n.id != id);
+        updateBadge();
+        renderNotifications();
+      } catch (err) {
+        console.error('Error eliminando notificación', err);
+      }
+    }
+
+    document.getElementById('clearAllNotifications').addEventListener('click', async () => {
+      try {
+        await fetch('/notifications/delete-all', { method: 'POST', headers: { 'CSRF-Token': csrfToken } });
+        notifications = [];
+        unreadCount = 0;
+        updateBadge();
+        renderNotifications();
+      } catch (err) {
+        console.error('Error limpiando todas', err);
+      }
+    });
+
+    if (userId) {
+      socket.emit('register_user', userId);
+    }
+
+    socket.on('notification', (data) => {
+      data.is_read = 0;
+      notifications.unshift(data);
+      unreadCount += 1;
+      updateBadge();
+      renderNotifications();
+      showUserToast(data.message);
+    });
+
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+    bell.addEventListener('click', () => dropdown.classList.toggle('hidden'));
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    renderNotifications();
+    updateBadge();
+  </script>
+</body>
+</html>

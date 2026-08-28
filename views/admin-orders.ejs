@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pedidos - Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body class="bg-stone-50 flex">
+  <%- include('admin-sidebar') %>
+  <div class="ml-64 p-8 flex-1">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-4xl font-bold font-serif text-stone-800">📋 Pedidos</h1>
+      <button onclick="openConfirmModal('¿Eliminar TODOS los pedidos? Esta acción es irreversible.', '/admin/orders/delete-all')" 
+              <%= orders.length === 0 ? 'disabled' : '' %>
+              class="bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-full shadow-md hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+        🗑️ Eliminar todos
+      </button>
+    </div>
+
+    <form action="/admin/orders" method="GET" class="bg-white rounded-2xl shadow-md p-4 mb-6 flex flex-col md:flex-row gap-4 items-end">
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
+        <input type="text" name="nombre" value="<%= nombre || '' %>" placeholder="Nombre del cliente"
+              class="w-full px-4 py-2 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1">Teléfono</label>
+        <input type="tel" name="telefono" id="telefonoFilter" value="<%= telefono || '' %>" placeholder="0000-0000000"
+              class="px-4 py-2 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1">Fecha</label>
+        <input type="date" name="fecha" value="<%= fecha || '' %>"
+              class="px-4 py-2 border border-stone-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+      </div>
+      <button type="submit" class="bg-red-700 hover:bg-red-800 text-white font-semibold px-5 py-2 rounded-full shadow-md transition">Filtrar</button>
+      <a href="/admin/orders" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-medium px-5 py-2 rounded-full transition">Limpiar</a>
+    </form>
+
+    <% if (success_msg && success_msg.length > 0) { %>
+      <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-2xl mb-6"><%= success_msg[0] %></div>
+    <% } %>
+    
+    <% if (error_msg && error_msg.length > 0) { %>
+      <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-2xl mb-6"><%= error_msg[0] %></div>
+    <% } %>
+
+    <% 
+      const filtroActivo = (nombre && nombre.trim() !== '') || 
+                          (telefono && telefono.trim() !== '') || 
+                          (fecha && fecha.trim() !== '');
+    %>
+
+    <% orders.forEach(order => { %>
+      <% 
+        const isCash = order.payment_method === 'Efectivo en local';
+        const canUpdateStatus = isCash || order.payment_status === 'paid';
+      %>
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-6 hover:shadow-xl transition">
+        <div class="flex flex-col md:flex-row justify-between">
+          <div class="mb-4 md:mb-0">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl font-bold font-serif text-stone-800"><%= order.customer_name %></span>
+
+              <!-- Badge estado operativo -->
+              <span class="px-2 py-1 text-xs rounded-full 
+                <%= order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                  order.status === 'ready' ? 'bg-green-100 text-green-700' : 
+                  'bg-gray-100 text-gray-700' %>">
+                <%= order.status === 'pending' ? 'Pendiente' : 
+                  order.status === 'ready' ? 'Listo' : 'Entregado' %>
+              </span>
+
+              <!-- Badge estado de pago (solo si no es efectivo) -->
+              <% if (order.payment_method !== 'Efectivo en local') { %>
+                <span class="px-2 py-1 text-xs rounded-full 
+                  <%= order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 
+                    order.payment_status === 'rejected' ? 'bg-red-100 text-red-700' : 
+                    order.payment_status === 'submitted' ? 'bg-blue-100 text-blue-700' : 
+                    'bg-yellow-100 text-yellow-700' %>">
+                  <%= order.payment_status === 'paid' ? 'Pagado' : 
+                    order.payment_status === 'rejected' ? 'Rechazado' : 
+                    order.payment_status === 'submitted' ? 'Pago reportado' : 
+                    'Pago pendiente' %>
+                </span>
+              <% } %>
+            </div>
+            <% if (order.payment_method !== 'Efectivo en local') { %>
+              <div class="mt-2 text-xs text-stone-600">
+                <p><strong>Nº de referencia:</strong> <%= order.payment_ref || 'No proporcionado' %></p>
+                <% if (order.payment_receipt) { %>
+                  <a href="<%= order.payment_receipt %>" target="_blank" class="text-blue-600 hover:underline inline-block mt-1">
+                    📎 Ver comprobante
+                  </a>
+                <% } else { %>
+                  <p class="text-stone-400">Sin comprobante</p>
+                <% } %>
+              </div>
+            <% } %>
+            <p class="text-stone-500 mt-2 flex items-center gap-4">
+              <span>📞 <%= order.phone %></span>
+              <span>🕒 <%= order.pickup_time %></span>
+              <span>💳 <%= order.payment_method %></span>
+            </p>
+            <p class="text-xs text-stone-400 mt-1">Pedido #<%= order.id %> · <%= new Date(order.created_at).toLocaleString() %></p>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="text-right">
+              <p class="text-3xl font-bold text-stone-800">$<%= order.total %></p>
+              
+              <form action="/admin/orders/<%= order.id %>/status" method="POST" class="mt-2 flex items-center gap-2">
+                <%- include('csrf') %>
+                <select name="status" <%= canUpdateStatus ? '' : 'disabled' %> class="border border-stone-300 rounded-full px-3 py-1 text-sm focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <option value="pending" <%= order.status == 'pending' ? 'selected' : '' %>>Pendiente</option>
+                  <option value="ready" <%= order.status == 'ready' ? 'selected' : '' %>>Listo</option>
+                  <option value="delivered" <%= order.status == 'delivered' ? 'selected' : '' %>>Entregado</option>
+                </select>
+                <button type="submit" <%= canUpdateStatus ? '' : 'disabled' %> class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed">Actualizar</button>
+              </form>
+
+              <% if (!isCash && order.payment_status === 'submitted') { %>
+                <div class="mt-2 flex gap-2">
+                  <form action="/admin/orders/<%= order.id %>/payment" method="POST">
+                    <%- include('csrf') %>
+                    <input type="hidden" name="payment_status" value="paid">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded-full">Confirmar pago</button>
+                  </form>
+                  <form action="/admin/orders/<%= order.id %>/payment" method="POST">
+                    <%- include('csrf') %>
+                    <input type="hidden" name="payment_status" value="rejected">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-full">Rechazar pago</button>
+                  </form>
+                </div>
+              <% } %>
+            </div>
+            <% if (canUpdateStatus) { %>
+              <a href="/admin/orders/<%= order.id %>/print" target="_blank" 
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-full transition" title="Imprimir">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H8v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              </a>
+            <% } else { %>
+              <span class="bg-gray-100 text-gray-400 p-2 rounded-full cursor-not-allowed" title="Imprimir (pago no validado)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H8v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              </span>
+            <% } %>
+            <button onclick="openConfirmModal('¿Eliminar el pedido #<%= order.id %> de <%= order.customer_name %>?', '/admin/orders/delete/<%= order.id %>')" 
+                    class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-full transition" title="Eliminar">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+        <hr class="my-4 border-stone-200">
+        <ul class="space-y-1">
+          <% if (order.items) { %>
+            <% order.items.forEach(item => { %>
+              <li class="text-stone-600">
+                <span class="font-medium"><%= item.quantity %>x <%= item.pizza_name %></span> (<%= item.size_label %>)
+                <% if (item.toppings.length) { %> + <%= item.toppings.join(', ') %><% } %>
+                = $<%= item.line_total.toFixed(2) %>
+              </li>
+            <% }) %>
+          <% } %>
+        </ul>
+      </div>
+    <% }) %>
+
+    <% if (orders.length === 0) { %>
+      <% if (filtroActivo) { %>
+        <div class="text-center py-10 text-stone-500">
+          No se encontraron pedidos con los filtros seleccionados.
+        </div>
+      <% } else { %>
+        <div class="text-center py-10 text-stone-500">
+          No hay pedidos todavía.
+        </div>
+      <% } %>
+    <% } %>
+
+  </div>
+  <%- include('modal-confirm') %>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Asegurarse de que el contenedor de toasts existe (ya lo hace el sidebar)
+    socket.on('nuevo_pedido', (order) => {
+      // Mostrar notificación
+      showToast(`Nuevo pedido de ${order.customer_name} por $${order.total}`, 'success');
+      // Recargar la página para actualizar la lista
+      location.reload();
+    });
+    socket.on('pago_realizado', () => {
+      location.reload();
+    });
+  </script>
+
+  <script>
+    const telefonoFilter = document.getElementById('telefonoFilter');
+
+    telefonoFilter.addEventListener('input', function(e) {
+      let value = this.value.replace(/\D/g, '');
+      if (value.length >= 4) {
+        value = value.substring(0,4) + '-' + value.substring(4,11);
+      }
+      this.value = value;
+    });
+
+    telefonoFilter.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const cleaned = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      let formatted = cleaned.substring(0,4);
+      if (cleaned.length > 4) formatted += '-' + cleaned.substring(4,11);
+      this.value = formatted;
+    });
+  </script>
+
+</body>
+</html>
