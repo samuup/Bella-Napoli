@@ -1,164 +1,194 @@
-const Database = require('better-sqlite3');
-const db = new Database('pizzeria.db');
-db.pragma('foreign_keys = ON');
+// database.js
+// ======================================================
+// MÓDULO DE BASE DE DATOS POSTGRESQL
+// Reemplaza la versión anterior que usaba SQLite.
+// Ahora utilizamos 'pg' (node-postgres) y Supabase.
+// ======================================================
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('customer', 'admin')) DEFAULT 'customer',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+// Importamos Pool desde 'pg' para manejar conexiones.
+const { Pool } = require('pg');
 
-  CREATE TABLE IF NOT EXISTS pizzas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1))
-  );
+// Creamos un pool de conexiones usando la URL de Supabase.
+// La URL se lee desde el archivo .env (gracias a dotenv en server.js).
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  family: 4
+});
 
-  -- Tamaños: solo guardamos la etiqueta, sin multiplicador
-  CREATE TABLE IF NOT EXISTS sizes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    label TEXT NOT NULL
-  );
+// ------------------------------------------------------
+// FUNCIÓN: crear tablas si no existen
+// ------------------------------------------------------
+async function initDb() {
+  // Todas las tablas se crean en una sola transacción para mayor eficiencia.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      role TEXT CHECK(role IN ('customer','admin')) DEFAULT 'customer',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
-  -- Precios fijos por pizza y tamaño
-  CREATE TABLE IF NOT EXISTS pizza_prices (
-    pizza_id INTEGER NOT NULL,
-    size_id INTEGER NOT NULL,
-    base_price REAL NOT NULL,
-    PRIMARY KEY (pizza_id, size_id),
-    FOREIGN KEY (pizza_id) REFERENCES pizzas(id) ON DELETE CASCADE,
-    FOREIGN KEY (size_id) REFERENCES sizes(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS pizzas (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      active INTEGER DEFAULT 1
+    );
 
-  CREATE TABLE IF NOT EXISTS toppings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    extra_price REAL NOT NULL DEFAULT 0.50
-  );
+    CREATE TABLE IF NOT EXISTS sizes (
+      id SERIAL PRIMARY KEY,
+      label TEXT NOT NULL
+    );
 
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    customer_name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    pickup_time TEXT NOT NULL,
-    payment_method TEXT NOT NULL,
-    payment_status TEXT NOT NULL DEFAULT 'pending',
-    payment_ref TEXT,
-    payment_receipt TEXT,
-    total REAL NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS pizza_prices (
+      pizza_id INTEGER REFERENCES pizzas(id) ON DELETE CASCADE,
+      size_id INTEGER REFERENCES sizes(id) ON DELETE CASCADE,
+      base_price REAL NOT NULL,
+      PRIMARY KEY (pizza_id, size_id)
+    );
 
-  CREATE TABLE IF NOT EXISTS order_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    pizza_id INTEGER NOT NULL,
-    size_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    line_total REAL NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (pizza_id) REFERENCES pizzas(id),
-    FOREIGN KEY (size_id) REFERENCES sizes(id)
-  );
+    CREATE TABLE IF NOT EXISTS toppings (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      extra_price REAL DEFAULT 0.50
+    );
 
-  CREATE TABLE IF NOT EXISTS order_item_toppings (
-    order_item_id INTEGER NOT NULL,
-    topping_id INTEGER NOT NULL,
-    PRIMARY KEY (order_item_id, topping_id),
-    FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE CASCADE,
-    FOREIGN KEY (topping_id) REFERENCES toppings(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      customer_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      pickup_time TEXT NOT NULL,
+      payment_method TEXT NOT NULL,
+      payment_status TEXT DEFAULT 'pending',
+      payment_ref TEXT,
+      payment_receipt TEXT,
+      total REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
-  -- Bebidas
-  CREATE TABLE IF NOT EXISTS bebidas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    price REAL NOT NULL,
-    active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1))
-  );
+    CREATE TABLE IF NOT EXISTS order_items (
+      id SERIAL PRIMARY KEY,
+      order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+      pizza_id INTEGER REFERENCES pizzas(id),
+      size_id INTEGER REFERENCES sizes(id),
+      quantity INTEGER NOT NULL,
+      line_total REAL NOT NULL
+    );
 
-  -- Bebidas incluidas en un pedido
-  CREATE TABLE IF NOT EXISTS order_bebidas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    bebida_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    line_total REAL NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (bebida_id) REFERENCES bebidas(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS order_item_toppings (
+      order_item_id INTEGER REFERENCES order_items(id) ON DELETE CASCADE,
+      topping_id INTEGER REFERENCES toppings(id) ON DELETE CASCADE,
+      PRIMARY KEY (order_item_id, topping_id)
+    );
 
-  CREATE TABLE IF NOT EXISTS password_resets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS bebidas (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      price REAL NOT NULL,
+      active INTEGER DEFAULT 1
+    );
 
-  CREATE TABLE IF NOT EXISTS notifications (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  order_id INTEGER,
-  message TEXT NOT NULL,
-  is_read INTEGER NOT NULL DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-  );
-`);
+    CREATE TABLE IF NOT EXISTS order_bebidas (
+      id SERIAL PRIMARY KEY,
+      order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+      bebida_id INTEGER REFERENCES bebidas(id) ON DELETE CASCADE,
+      quantity INTEGER NOT NULL,
+      line_total REAL NOT NULL
+    );
 
-// Datos semilla
-const insertSize = db.prepare('INSERT OR IGNORE INTO sizes (id, label) VALUES (?, ?)');
-insertSize.run(1, 'Mediana');
-insertSize.run(2, 'Grande');
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
-const insertPizza = db.prepare('INSERT OR IGNORE INTO pizzas (id, name, description, active) VALUES (?, ?, ?, 1)');
-insertPizza.run(1, 'Margarita', 'Salsa de tomate, mozzarella y albahaca');
-insertPizza.run(2, 'Pepperoni', 'Pepperoni y mozzarella');
-insertPizza.run(3, 'Hawaiana', 'Jamón, piña y mozzarella');
-insertPizza.run(4, 'Vegetariana', 'Pimiento, champiñones, aceitunas y mozzarella');
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+      message TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 
-// Precios fijos (sin multiplicador)
-const insertPrice = db.prepare(`
-  INSERT OR IGNORE INTO pizza_prices (pizza_id, size_id, base_price)
-  VALUES (?, ?, ?)
-`);
-// Margarita
-insertPrice.run(1, 1, 8.5);   // Mediana
-insertPrice.run(1, 2, 10.5);  // Grande
-// Pepperoni
-insertPrice.run(2, 1, 9.5);
-insertPrice.run(2, 2, 11.5);
-// Hawaiana
-insertPrice.run(3, 1, 10.0);
-insertPrice.run(3, 2, 12.0);
-// Vegetariana
-insertPrice.run(4, 1, 9.0);
-insertPrice.run(4, 2, 11.0);
+  console.log('✅ Base de datos PostgreSQL inicializada');
+}
 
-// Toppings
-const insertTopping = db.prepare('INSERT OR IGNORE INTO toppings (id, name, extra_price) VALUES (?, ?, ?)');
-insertTopping.run(1, 'Queso extra', 0.50);
-insertTopping.run(2, 'Champiñones', 0.50);
-insertTopping.run(3, 'Aceitunas', 0.50);
-insertTopping.run(4, 'Pepperoni extra', 0.50);
+// ------------------------------------------------------
+// FUNCIÓN: insertar datos semilla solo si las tablas están vacías
+// ------------------------------------------------------
+async function seedData() {
+  // Verificamos si ya hay tamaños insertados.
+  const sizeCount = await pool.query('SELECT COUNT(*) FROM sizes');
+  if (parseInt(sizeCount.rows[0].count) === 0) {
+    // Insertamos tamaños
+    await pool.query(`
+      INSERT INTO sizes (id, label) VALUES
+      (1, 'Mediana'),
+      (2, 'Grande')
+    `);
 
-// Insertar bebidas de ejemplo
-const insertBebida = db.prepare('INSERT OR IGNORE INTO bebidas (id, name, price, active) VALUES (?, ?, ?, 1)');
-insertBebida.run(1, 'Coca-Cola 355ml', 2.50);
-insertBebida.run(2, 'Sprite 355ml', 2.50);
-insertBebida.run(3, 'Agua mineral 500ml', 1.50);
-insertBebida.run(4, 'Cerveza artesanal', 4.00);
+    // Insertamos pizzas
+    await pool.query(`
+      INSERT INTO pizzas (id, name, description, active) VALUES
+      (1, 'Margarita', 'Salsa de tomate, mozzarella y albahaca', 1),
+      (2, 'Pepperoni', 'Pepperoni y mozzarella', 1),
+      (3, 'Hawaiana', 'Jamón, piña y mozzarella', 1),
+      (4, 'Vegetariana', 'Pimiento, champiñones, aceitunas y mozzarella', 1)
+    `);
 
-console.log('✅ Base de datos actualizada: solo tamaños Mediana y Grande con precios fijos.');
+    // Insertamos precios para cada pizza y tamaño
+    await pool.query(`
+      INSERT INTO pizza_prices (pizza_id, size_id, base_price) VALUES
+      (1, 1, 8.5),
+      (1, 2, 10.5),
+      (2, 1, 9.5),
+      (2, 2, 11.5),
+      (3, 1, 10.0),
+      (3, 2, 12.0),
+      (4, 1, 9.0),
+      (4, 2, 11.0)
+    `);
 
-module.exports = db;
+    // Insertamos toppings
+    await pool.query(`
+      INSERT INTO toppings (id, name, extra_price) VALUES
+      (1, 'Queso extra', 0.50),
+      (2, 'Champiñones', 0.50),
+      (3, 'Aceitunas', 0.50),
+      (4, 'Pepperoni extra', 0.50)
+    `);
+
+    // Insertamos bebidas de ejemplo
+    await pool.query(`
+      INSERT INTO bebidas (id, name, price, active) VALUES
+      (1, 'Coca-Cola 355ml', 2.50, 1),
+      (2, 'Sprite 355ml', 2.50, 1),
+      (3, 'Agua mineral 500ml', 1.50, 1),
+      (4, 'Cerveza artesanal', 4.00, 1)
+    `);
+
+    console.log('✅ Datos semilla insertados');
+  }
+}
+
+// ------------------------------------------------------
+// FUNCIÓN PRINCIPAL: inicializar BD y sembrar datos
+// ------------------------------------------------------
+async function setup() {
+  await initDb();
+  await seedData();
+}
+
+// Ejecutamos la inicialización
+setup();
+
+// Exportamos el pool para que server.js pueda usarlo
+module.exports = pool;

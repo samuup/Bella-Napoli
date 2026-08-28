@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -11,7 +13,6 @@ const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
-require('dotenv').config();
 
 const app = express();
 
@@ -28,7 +29,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB máximo
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -79,7 +80,6 @@ const paymentInfo = {
   }
 };
 
-// Asegurar que la carpeta uploads existe
 const fs = require('fs');
 if (!fs.existsSync('public/uploads')) {
   fs.mkdirSync('public/uploads', { recursive: true });
@@ -89,7 +89,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 io.on('connection', (socket) => {
-  // Cuando el cliente envía su user_id, unirse a la sala personal
   socket.on('register_user', (userId) => {
     if (userId) {
       socket.join(`user_${userId}`);
@@ -100,10 +99,8 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Configurar motor de plantillas EJS
 app.set('view engine', 'ejs');
 
-// Middlewares
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -119,15 +116,13 @@ app.use((req, res, next) => {
 app.use(flash());
 app.use(express.static('public'));
 
-// Configurar sesiones
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 día de duración
+  cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
-// Middleware para pasar el usuario actual a todas las vistas
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   next();
@@ -135,12 +130,20 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
   if (req.session.user && req.session.user.role === 'admin') {
-    const count = db.prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'pending'").get().count;
-    res.locals.pendingOrdersCount = count;
+    db.query("SELECT COUNT(*) as count FROM orders WHERE status = 'pending'")
+      .then(result => {
+        res.locals.pendingOrdersCount = parseInt(result.rows[0].count);
+        next();
+      })
+      .catch(err => {
+        console.error(err);
+        res.locals.pendingOrdersCount = 0;
+        next();
+      });
   } else {
     res.locals.pendingOrdersCount = 0;
+    next();
   }
-  next();
 });
 
 app.use((req, res, next) => {
@@ -153,12 +156,10 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
   res.locals.error_msg = req.flash('error_msg');
-  // Para vistas que aún usan 'message'
   res.locals.message = res.locals.success_msg[0] || res.locals.error_msg[0] || null;
   next();
 });
 
-// Función helper: verificar si hay sesión activa
 function isAuthenticated(req, res, next) {
   if (req.session.user) {
     return next();
@@ -166,25 +167,18 @@ function isAuthenticated(req, res, next) {
   res.redirect('/login');
 }
 
-// -------------------------------------------------------
-// RUTAS DE AUTENTICACIÓN
-// -------------------------------------------------------
-
-// Registro (GET)
+// ==================== AUTENTICACIÓN ====================
 app.get('/register', (req, res) => {
   res.render('register', { error: null });
 });
 
-// Registro (POST)
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
   const { name, email, password, password2 } = req.body;
 
-  // Validaciones básicas
   if (!name || !email || !password || !password2) {
     return res.render('register', { error: 'Todos los campos son obligatorios.' });
   }
 
-  // Validar nombre (solo letras y números, sin espacios ni caracteres especiales)
   const nameRegex = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]+$/;
   if (!nameRegex.test(name)) {
     return res.render('register', { 
@@ -192,7 +186,6 @@ app.post('/register', (req, res) => {
     });
   }
 
-  // Validar longitud máxima del nombre (30 caracteres)
   if (name.length > 30) {
     return res.render('register', {
       error: 'El nombre no puede exceder los 30 caracteres.'
@@ -203,12 +196,10 @@ app.post('/register', (req, res) => {
     return res.render('register', { error: 'Las contraseñas no coinciden.' });
   }
 
-  // Validar que la contraseña no contenga espacios
   if (/\s/.test(password)) {
     return res.render('register', { error: 'La contraseña no puede contener espacios.' });
   }
 
-  // Validar requisitos de la contraseña (mínimo 8, máximo 20, mayúscula, número, carácter especial)
   const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,20}$/;
   if (!passwordRegex.test(password)) {
     return res.render('register', { 
@@ -216,13 +207,11 @@ app.post('/register', (req, res) => {
     });
   }
 
-  // Validar formato de correo
   const emailFormatRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailFormatRegex.test(email)) {
     return res.render('register', { error: 'Formato de correo inválido. Use una dirección como tu@correo.com.' });
   }
 
-  // Validar dominio del correo (whitelist)
   const allowedDomains = [
     'gmail.com',
     'outlook.com',
@@ -238,36 +227,37 @@ app.post('/register', (req, res) => {
     });
   }
 
-  // Verificar si el correo ya existe
-  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existingUser) {
+  const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+  if (existingUser.rows.length > 0) {
     return res.render('register', { error: 'El correo ya está registrado.' });
   }
 
-  // Hashear contraseña
   const hash = bcrypt.hashSync(password, 10);
 
-  // Insertar usuario (rol por defecto 'customer')
-  db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')
-    .run(name.trim(), email, hash, 'customer');
+  await db.query('INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)', [
+    name.trim(),
+    email,
+    hash,
+    'customer'
+  ]);
 
   res.redirect('/login');
 });
 
-// Inicio de sesión (GET)
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
-// Inicio de sesión (POST)
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.render('login', { error: 'Correo y contraseña requeridos.' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+  const user = userResult.rows[0];
+
   if (!user) {
     return res.render('login', { error: 'Correo o contraseña incorrectos.' });
   }
@@ -277,7 +267,6 @@ app.post('/login', (req, res) => {
     return res.render('login', { error: 'Correo o contraseña incorrectos.' });
   }
 
-  // Guardar datos en sesión (excepto el hash de la contraseña)
   req.session.user = {
     id: user.id,
     name: user.name,
@@ -285,64 +274,62 @@ app.post('/login', (req, res) => {
     role: user.role
   };
 
-  // Si es admin, redirigir al panel (por ahora a /, luego a /admin)
   if (user.role === 'admin') {
     return res.redirect('/admin');
   }
   res.redirect('/order');
 });
 
-// Cerrar sesión
 app.get('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/login');
   });
 });
 
-// Olvidar contraseña
 app.get('/forgot-password', (req, res) => {
   res.render('forgot-password', { error: null, success: false });
 });
 
-app.post('/forgot-password', csrfProtection, (req, res) => {
+app.post('/forgot-password', csrfProtection, async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
     return res.render('forgot-password', { error: 'Correo obligatorio', success: false });
   }
 
-  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const userResult = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+  const user = userResult.rows[0];
+
   if (!user) {
-    // No revelar si existe o no
     return res.render('forgot-password', { error: 'El correo no existe, reintenta con uno válido y recibirás instrucciones', success: false });
   }
 
   const token = crypto.randomBytes(20).toString('hex');
-  db.prepare('INSERT INTO password_resets (user_id, token) VALUES (?, ?)').run(user.id, token);
+  await db.query('INSERT INTO password_resets (user_id, token) VALUES ($1, $2)', [user.id, token]);
 
-  // En producción, enviar por correo el enlace. Para desarrollo, lo mostramos en consola y en la página.
   const resetLink = `http://localhost:${PORT}/reset-password/${token}`;
   console.log('Enlace de restablecimiento:', resetLink);
 
   res.render('forgot-password', { 
     error: null, 
     success: true, 
-    resetLink // Solo para desarrollo
+    resetLink
   });
 });
 
-app.get('/reset-password/:token', (req, res) => {
+app.get('/reset-password/:token', async (req, res) => {
   const token = req.params.token;
-  const reset = db.prepare('SELECT * FROM password_resets WHERE token = ?').get(token);
+  const resetResult = await db.query('SELECT * FROM password_resets WHERE token = $1', [token]);
+  const reset = resetResult.rows[0];
+
   if (!reset) {
     return res.render('reset-password', { token: null, error: 'Token inválido o expirado' });
   }
 
-  // Opcional: verificar expiración (ej. 1 hora)
   res.render('reset-password', { token, error: null });
 });
 
-app.post('/reset-password/:token', csrfProtection, (req, res) => {
+app.post('/reset-password/:token', csrfProtection, async (req, res) => {
   const token = req.params.token;
   const { password, password2 } = req.body;
 
@@ -350,88 +337,76 @@ app.post('/reset-password/:token', csrfProtection, (req, res) => {
     return res.render('reset-password', { token, error: 'Las contraseñas no coinciden' });
   }
 
-  // Validar requisitos de contraseña (mismos que en registro)
   const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,20}$/;
   if (!passwordRegex.test(password)) {
     return res.render('reset-password', { token, error: 'La contraseña debe tener entre 8 y 20 caracteres, incluir al menos una mayúscula, un número y un carácter especial.' });
   }
 
-  const reset = db.prepare('SELECT * FROM password_resets WHERE token = ?').get(token);
+  const resetResult = await db.query('SELECT * FROM password_resets WHERE token = $1', [token]);
+  const reset = resetResult.rows[0];
+
   if (!reset) {
     return res.render('reset-password', { token: null, error: 'Token inválido o expirado' });
   }
 
   const hash = bcrypt.hashSync(password, 10);
 
-  // Verificar que la nueva contraseña sea diferente a la anterior
-  const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(reset.user_id);
-    if (bcrypt.compareSync(password, user.password_hash)) {
-      return res.render('reset-password', { 
-        token, 
-        error: 'La nueva contraseña debe ser diferente a la anterior.' 
-      });
+  const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [reset.user_id]);
+  const user = userResult.rows[0];
+
+  if (bcrypt.compareSync(password, user.password_hash)) {
+    return res.render('reset-password', { 
+      token, 
+      error: 'La nueva contraseña debe ser diferente a la anterior.' 
+    });
   }
 
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, reset.user_id);
-  db.prepare('DELETE FROM password_resets WHERE token = ?').run(token);
+  await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, reset.user_id]);
+  await db.query('DELETE FROM password_resets WHERE token = $1', [token]);
 
   req.flash('success_msg', 'Contraseña actualizada. Inicia sesión con tu nueva contraseña.');
   res.redirect('/login');
 });
 
-// -------------------------------------------------------
-// RUTA PRINCIPAL (MENÚ) 
-// -------------------------------------------------------
+// ==================== MENÚ PRINCIPAL ====================
+app.get('/', async (req, res) => {
+  try {
+    const pizzas = (await db.query('SELECT * FROM pizzas WHERE active = 1')).rows;
+    const sizes = (await db.query('SELECT * FROM sizes')).rows;
+    const toppings = (await db.query('SELECT * FROM toppings')).rows;
 
-app.get('/', (req, res) => {
-  // Obtener pizzas activas
-  const pizzas = db.prepare('SELECT * FROM pizzas WHERE active = 1').all();
+    const priceRows = (await db.query('SELECT pizza_id, size_id, base_price FROM pizza_prices')).rows;
+    const prices = {};
+    for (const row of priceRows) {
+      if (!prices[row.pizza_id]) prices[row.pizza_id] = {};
+      prices[row.pizza_id][row.size_id] = row.base_price;
+    }
 
-  // Obtener tamaños
-  const sizes = db.prepare('SELECT * FROM sizes').all();
-
-  // Obtener toppings
-  const toppings = db.prepare('SELECT * FROM toppings').all();
-
-  // Construir un objeto con precios por pizza y tamaño
-  const prices = {};
-  const priceRows = db.prepare(`
-    SELECT pizza_id, size_id, base_price
-    FROM pizza_prices
-  `).all();
-  for (const row of priceRows) {
-    if (!prices[row.pizza_id]) prices[row.pizza_id] = {};
-    prices[row.pizza_id][row.size_id] = row.base_price;
+    let notifications = [];
+    if (req.session.user) {
+      notifications = (await db.query('SELECT * FROM notifications WHERE user_id = $1 AND is_read = 0 ORDER BY created_at DESC', [req.session.user.id])).rows;
+    }
+    res.render('index', { pizzas, sizes, toppings, prices, notifications });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al cargar el menú');
   }
-
-  let notifications = [];
-  if (req.session.user) {
-    notifications = db.prepare('SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC')
-                      .all(req.session.user.id);
-  }
-  res.render('index', { pizzas, sizes, toppings, prices, notifications });
 });
 
-// -------------------------------------------------------
-// PROCESAR PEDIDO (POST /order)
-// -------------------------------------------------------
-
-app.post('/order', isAuthenticated, (req, res) => {
+// ==================== PROCESAR PEDIDO ====================
+app.post('/order', isAuthenticated, async (req, res) => {
   const { phone, pickup_time, payment_method, pizzas: pizzasData } = req.body;
   const user_id = req.session.user.id;
 
-  // Validaciones
   if (!phone || !pickup_time || !payment_method) {
     return res.status(400).send('Faltan datos del cliente o método de pago.');
   }
 
-  // Validar formato de teléfono venezolano: 4 dígitos - 7 dígitos
   const phoneRegex = /^\d{4}-\d{7}$/;
   if (!phoneRegex.test(phone)) {
     return res.status(400).send('Formato de teléfono inválido. Use: 0000-0000000');
   }
 
-  // Validar código de área
   const validAreaCodes = [
     '0212', '0241', '0251', '0261', '0271', '0281', '0291',
     '0410', '0412', '0414', '0416', '0418', '0420', '0424', '0426', '0428'
@@ -441,42 +416,36 @@ app.post('/order', isAuthenticated, (req, res) => {
     return res.status(400).send('Código de área no válido.');
   }
 
-  // Validar horario de recogida: entre 17:00 y 23:59
   const [hours, minutes] = pickup_time.split(':').map(Number);
   const totalMinutes = hours * 60 + minutes;
   if (totalMinutes < 17 * 60 || totalMinutes > 23 * 60 + 59) {
     return res.status(400).send('La hora de recogida debe ser entre las 5:00 PM y las 11:59 PM.');
   }
 
-  // Calcular total y construir items
   let total = 0;
-  const orderItems = []; // guardaremos { pizza_id, size_id, quantity, toppings[], lineTotal }
+  const orderItems = [];
 
   if (pizzasData) {
     for (const [index, data] of Object.entries(pizzasData)) {
       if (data.selected) {
-        const pizza_id = parseInt(index) + 1; // porque en el front usamos índices 0,1,2,3
+        const pizza_id = parseInt(index) + 1;
         const size_id = parseInt(data.size);
         const quantity = parseInt(data.quantity) || 1;
         const topping_ids = [];
         if (data.toppings) {
-          // Si es array, iterar; si es único, convertir a array
           const rawToppings = Array.isArray(data.toppings) ? data.toppings : [data.toppings];
           for (const t of rawToppings) {
             topping_ids.push(parseInt(t));
           }
         }
 
-        // Obtener precio base para pizza y tamaño
-        const priceRow = db.prepare('SELECT base_price FROM pizza_prices WHERE pizza_id = ? AND size_id = ?')
-                            .get(pizza_id, size_id);
-        if (!priceRow) continue; // combinación no existe
+        const priceRow = (await db.query('SELECT base_price FROM pizza_prices WHERE pizza_id = $1 AND size_id = $2', [pizza_id, size_id])).rows[0];
+        if (!priceRow) continue;
         let base = priceRow.base_price;
 
-        // Sumar costo de toppings
         let toppingsCost = 0;
         for (const t_id of topping_ids) {
-          const topping = db.prepare('SELECT extra_price FROM toppings WHERE id = ?').get(t_id);
+          const topping = (await db.query('SELECT extra_price FROM toppings WHERE id = $1', [t_id])).rows[0];
           if (topping) toppingsCost += topping.extra_price;
         }
 
@@ -494,13 +463,12 @@ app.post('/order', isAuthenticated, (req, res) => {
     }
   }
 
-  // Procesar bebidas
   const bebidasData = req.body.bebidas || {};
   const orderBebidas = [];
   for (const [bebidaId, qty] of Object.entries(bebidasData)) {
     const quantity = parseInt(qty) || 0;
     if (quantity > 0) {
-      const bebida = db.prepare('SELECT name, price FROM bebidas WHERE id = ? AND active = 1').get(bebidaId);
+      const bebida = (await db.query('SELECT name, price FROM bebidas WHERE id = $1 AND active = 1', [bebidaId])).rows[0];
       if (bebida) {
         const lineTotal = bebida.price * quantity;
         total += lineTotal;
@@ -519,41 +487,33 @@ app.post('/order', isAuthenticated, (req, res) => {
     return res.status(400).send('No has seleccionado ninguna pizza.');
   }
 
-  // Insertar la orden
-  const insertOrder = db.prepare(`
-    INSERT INTO orders (user_id, customer_name, phone, pickup_time, payment_method, total, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'pending')
-  `);
   const customerName = req.session.user.name;
-  const result = insertOrder.run(user_id, customerName, phone, pickup_time, payment_method, total.toFixed(2));
-  const orderId = result.lastInsertRowid;
+  const insertOrder = await db.query(
+    `INSERT INTO orders (user_id, customer_name, phone, pickup_time, payment_method, total, status)
+     VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING id`,
+    [user_id, customerName, phone, pickup_time, payment_method, total.toFixed(2)]
+  );
+  const orderId = insertOrder.rows[0].id;
 
-  // Insertar cada item
-  const insertItem = db.prepare(`
-    INSERT INTO order_items (order_id, pizza_id, size_id, quantity, line_total)
-    VALUES (?, ?, ?, ?, ?)
-  `);
-
-  const insertTopping = db.prepare(`
-    INSERT INTO order_item_toppings (order_item_id, topping_id) VALUES (?, ?)
-  `);
-
-  const details = []; // para mostrar en la confirmación
+  const details = [];
   for (const item of orderItems) {
-    const itemResult = insertItem.run(orderId, item.pizza_id, item.size_id, item.quantity, item.lineTotal);
-    const orderItemId = itemResult.lastInsertRowid;
+    const insertItem = await db.query(
+      'INSERT INTO order_items (order_id, pizza_id, size_id, quantity, line_total) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [orderId, item.pizza_id, item.size_id, item.quantity, item.lineTotal]
+    );
+    const orderItemId = insertItem.rows[0].id;
 
     for (const t_id of item.topping_ids) {
-      insertTopping.run(orderItemId, t_id);
+      await db.query('INSERT INTO order_item_toppings (order_item_id, topping_id) VALUES ($1, $2)', [orderItemId, t_id]);
     }
 
-    // Recoger nombres para la vista de confirmación
-    const pizza = db.prepare('SELECT name FROM pizzas WHERE id = ?').get(item.pizza_id);
-    const size = db.prepare('SELECT label FROM sizes WHERE id = ?').get(item.size_id);
-    const toppingNames = item.topping_ids.map(t_id => {
-      const t = db.prepare('SELECT name FROM toppings WHERE id = ?').get(t_id);
-      return t ? t.name : '';
-    }).filter(Boolean);
+    const pizza = (await db.query('SELECT name FROM pizzas WHERE id = $1', [item.pizza_id])).rows[0];
+    const size = (await db.query('SELECT label FROM sizes WHERE id = $1', [item.size_id])).rows[0];
+    const toppingNames = [];
+    for (const t_id of item.topping_ids) {
+      const topping = (await db.query('SELECT name FROM toppings WHERE id = $1', [t_id])).rows[0];
+      if (topping) toppingNames.push(topping.name);
+    }
 
     details.push({
       pizzaName: pizza.name,
@@ -564,15 +524,10 @@ app.post('/order', isAuthenticated, (req, res) => {
     });
   }
 
-  // Insertar cada bebida
-  const insertBebida = db.prepare(`
-    INSERT INTO order_bebidas (order_id, bebida_id, quantity, line_total)
-    VALUES (?, ?, ?, ?)
-  `);
-
-  const bebidaDetails = []; // para la confirmación
+  const bebidaDetails = [];
   for (const b of orderBebidas) {
-    insertBebida.run(orderId, b.bebida_id, b.quantity, b.lineTotal);
+    await db.query('INSERT INTO order_bebidas (order_id, bebida_id, quantity, line_total) VALUES ($1, $2, $3, $4)',
+      [orderId, b.bebida_id, b.quantity, b.lineTotal]);
     bebidaDetails.push({
       name: b.name,
       quantity: b.quantity,
@@ -580,17 +535,8 @@ app.post('/order', isAuthenticated, (req, res) => {
     });
   }
 
-  // Obtener datos para la notificación
-  const newOrder = {
-    id: orderId,
-    customer_name: customerName,
-    total: total.toFixed(2),
-    status: 'pending',
-    created_at: new Date().toISOString()
-  };
-  io.emit('nuevo_pedido', newOrder);
+  io.emit('nuevo_pedido', { id: orderId, customer_name: customerName, total: total.toFixed(2), status: 'pending', created_at: new Date().toISOString() });
 
-  // Renderizar confirmación
   if (payment_method === 'Efectivo en local') {
     res.render('order-confirmation', {
       customerName,
@@ -601,16 +547,11 @@ app.post('/order', isAuthenticated, (req, res) => {
       total: total.toFixed(2)
     });
   } else {
-    // Redirigir a la página de pago
     res.redirect(`/payment/${orderId}`);
   }
 });
 
-// -------------------------------------------------------
-// RUTA ADMIN (protegida, solo admin)
-// -------------------------------------------------------
-
-// Middleware para admin
+// ==================== RUTAS ADMIN ====================
 function isAdmin(req, res, next) {
   if (req.session.user && req.session.user.role === 'admin') {
     return next();
@@ -618,64 +559,56 @@ function isAdmin(req, res, next) {
   res.status(403).send('Acceso denegado. Solo administradores.');
 }
 
-// Dashboard
-app.get('/admin', isAdmin, (req, res) => {
-  // Estadísticas generales
-  const totalRevenue = db.prepare('SELECT COALESCE(SUM(total), 0) as total FROM orders').get().total;
-  const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get().count;
-  const activePizzas = db.prepare('SELECT COUNT(*) as count FROM pizzas WHERE active = 1').get().count;
-  const totalToppings = db.prepare('SELECT COUNT(*) as count FROM toppings').get().count;
+app.get('/admin', isAdmin, async (req, res) => {
+  const totalRevenue = (await db.query('SELECT COALESCE(SUM(total), 0) as total FROM orders')).rows[0].total;
+  const totalOrders = (await db.query('SELECT COUNT(*) as count FROM orders')).rows[0].count;
+  const activePizzas = (await db.query('SELECT COUNT(*) as count FROM pizzas WHERE active = 1')).rows[0].count;
+  const totalToppings = (await db.query('SELECT COUNT(*) as count FROM toppings')).rows[0].count;
   
-  // Pedidos de hoy vs ayer
-  const today = new Date().toISOString().split('T')[0]; // formato YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  const ordersToday = db.prepare("SELECT COUNT(*) as count FROM orders WHERE date(created_at) = ?").get(today).count;
-  const ordersYesterday = db.prepare("SELECT COUNT(*) as count FROM orders WHERE date(created_at) = ?").get(yesterday).count;
-  
-  // Pedidos por estado
+  const ordersToday = (await db.query('SELECT COUNT(*) as count FROM orders WHERE created_at::date = $1', [today])).rows[0].count;
+  const ordersYesterday = (await db.query('SELECT COUNT(*) as count FROM orders WHERE created_at::date = $1', [yesterday])).rows[0].count;
+
   const ordersByStatus = {
-    pending: db.prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'pending'").get().count,
-    confirmed: db.prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'confirmed'").get().count,
-    ready: db.prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'ready'").get().count,
-    delivered: db.prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'delivered'").get().count
+    pending: (await db.query("SELECT COUNT(*) as count FROM orders WHERE status = 'pending'")).rows[0].count,
+    confirmed: (await db.query("SELECT COUNT(*) as count FROM orders WHERE status = 'confirmed'")).rows[0].count,
+    ready: (await db.query("SELECT COUNT(*) as count FROM orders WHERE status = 'ready'")).rows[0].count,
+    delivered: (await db.query("SELECT COUNT(*) as count FROM orders WHERE status = 'delivered'")).rows[0].count
   };
 
-  // Pizzas más vendidas (top 5)
-  const topPizzas = db.prepare(`
+  const topPizzas = (await db.query(`
     SELECT p.name, SUM(oi.quantity) as total_sold
     FROM order_items oi
     JOIN pizzas p ON oi.pizza_id = p.id
-    GROUP BY oi.pizza_id
+    GROUP BY oi.pizza_id, p.name
     ORDER BY total_sold DESC
     LIMIT 5
-  `).all();
+  `)).rows;
 
-  // Ingredientes extra más pedidos (top 5)
-  const topToppings = db.prepare(`
+  const topToppings = (await db.query(`
     SELECT t.name, COUNT(*) as times_used
     FROM order_item_toppings oit
     JOIN toppings t ON oit.topping_id = t.id
-    GROUP BY oit.topping_id
+    GROUP BY oit.topping_id, t.name
     ORDER BY times_used DESC
     LIMIT 5
-  `).all();
+  `)).rows;
 
-  // Tamaños más comprados
-  const topSizes = db.prepare(`
+  const topSizes = (await db.query(`
     SELECT s.label, COUNT(*) as times_used
     FROM order_items oi
     JOIN sizes s ON oi.size_id = s.id
-    GROUP BY oi.size_id
+    GROUP BY oi.size_id, s.label
     ORDER BY times_used DESC
-  `).all();
+  `)).rows;
 
-  // Últimos 5 pedidos para la tabla rápida
-  const recentOrders = db.prepare(`
+  const recentOrders = (await db.query(`
     SELECT id, customer_name, total, status, created_at
     FROM orders
     ORDER BY created_at DESC
     LIMIT 5
-  `).all();
+  `)).rows;
 
   res.render('admin', {
     totalRevenue,
@@ -688,362 +621,325 @@ app.get('/admin', isAdmin, (req, res) => {
     topPizzas,
     topToppings,
     topSizes,
-    recentOrders,
+    recentOrders
   });
 });
 
-// ----------------------------------------------------
-// Pizzas
-// ----------------------------------------------------
-app.get('/admin/pizzas', isAdmin, (req, res) => {
-  const pizzas = db.prepare('SELECT * FROM pizzas ORDER BY id').all();
+// --- Pizzas ---
+app.get('/admin/pizzas', isAdmin, async (req, res) => {
+  const pizzas = (await db.query('SELECT * FROM pizzas ORDER BY id')).rows;
   res.render('admin-pizzas', { pizzas });
 });
 
-app.get('/admin/pizzas/add', isAdmin, (req, res) => {
-  const sizes = db.prepare('SELECT * FROM sizes').all();
+app.get('/admin/pizzas/add', isAdmin, async (req, res) => {
+  const sizes = (await db.query('SELECT * FROM sizes')).rows;
   res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: null });
 });
 
-app.post('/admin/pizzas/add', isAdmin, (req, res) => {
+app.post('/admin/pizzas/add', isAdmin, async (req, res) => {
   const { name, description, active } = req.body;
 
-  // Validar nombre
   if (!name || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(name.trim())) {
-    const sizes = db.prepare('SELECT * FROM sizes').all();
+    const sizes = (await db.query('SELECT * FROM sizes')).rows;
     return res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: 'Nombre de pizza inválido (solo letras y espacios).' });
   }
 
-  // Validar descripción (solo si se proporciona)
   if (description && !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(description.trim())) {
-    const sizes = db.prepare('SELECT * FROM sizes').all();
+    const sizes = (await db.query('SELECT * FROM sizes')).rows;
     return res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: 'La descripción solo puede contener letras y espacios.' });
   }
 
-  // Validar que todos los precios sean >=0
-  const sizes = db.prepare('SELECT * FROM sizes').all();
+  const sizes = (await db.query('SELECT * FROM sizes')).rows;
   for (const size of sizes) {
     const priceValue = parseFloat(req.body['price_' + size.id] || 0);
     if (isNaN(priceValue) || priceValue < 0) {
       return res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: `El precio para ${size.label} no puede ser negativo.` });
     }
   }
-  // Insertar pizza
-  const result = db.prepare('INSERT INTO pizzas (name, description, active) VALUES (?, ?, ?)').run(name, description || null, active || 1);
-  const pizzaId = result.lastInsertRowid;
-  // Insertar precios por tamaño (los campos price_<id>)
+
+  const result = await db.query('INSERT INTO pizzas (name, description, active) VALUES ($1, $2, $3) RETURNING id',
+    [name, description || null, active || 1]);
+  const pizzaId = result.rows[0].id;
+
   for (const size of sizes) {
     const priceValue = parseFloat(req.body['price_' + size.id] || 0);
-    db.prepare('INSERT INTO pizza_prices (pizza_id, size_id, base_price) VALUES (?, ?, ?)').run(pizzaId, size.id, priceValue);
+    await db.query('INSERT INTO pizza_prices (pizza_id, size_id, base_price) VALUES ($1, $2, $3)',
+      [pizzaId, size.id, priceValue]);
   }
+
   req.flash('success_msg', 'Pizza creada');
   res.redirect('/admin/pizzas');
 });
 
-app.get('/admin/pizzas/edit/:id', isAdmin, (req, res) => {
-  const pizza = db.prepare('SELECT * FROM pizzas WHERE id = ?').get(req.params.id);
+app.get('/admin/pizzas/edit/:id', isAdmin, async (req, res) => {
+  const pizza = (await db.query('SELECT * FROM pizzas WHERE id = $1', [req.params.id])).rows[0];
   if (!pizza) return res.status(404).send('Pizza no encontrada');
-  const sizes = db.prepare('SELECT * FROM sizes').all();
-  const priceRows = db.prepare('SELECT size_id, base_price FROM pizza_prices WHERE pizza_id = ?').all(pizza.id);
+  const sizes = (await db.query('SELECT * FROM sizes')).rows;
+  const priceRows = (await db.query('SELECT size_id, base_price FROM pizza_prices WHERE pizza_id = $1', [pizza.id])).rows;
   const prices = {};
   priceRows.forEach(row => { prices[row.size_id] = row.base_price; });
   res.render('admin-pizza-form', { pizza, sizes, prices, error: null });
 });
 
-app.post('/admin/pizzas/edit/:id', isAdmin, (req, res) => {
-  const pizza = db.prepare('SELECT * FROM pizzas WHERE id = ?').get(req.params.id);
+app.post('/admin/pizzas/edit/:id', isAdmin, async (req, res) => {
+  const pizza = (await db.query('SELECT * FROM pizzas WHERE id = $1', [req.params.id])).rows[0];
+  if (!pizza) return res.status(404).send('Pizza no encontrada');
   const { name, description, active } = req.body;
 
+  const sizes = (await db.query('SELECT * FROM sizes')).rows;
+
   if (!name || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(name.trim())) {
-    const sizes = db.prepare('SELECT * FROM sizes').all();
-    const priceRows = db.prepare('SELECT size_id, base_price FROM pizza_prices WHERE pizza_id = ?').all(pizza.id);
-    const prices = {};
-    priceRows.forEach(row => { prices[row.size_id] = row.base_price; });
-    return res.render('admin-pizza-form', { pizza, sizes, prices, error: 'Nombre inválido.' });
+    return res.render('admin-pizza-form', { pizza, sizes, prices: {}, error: 'Nombre inválido.' });
   }
 
   if (description && !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(description.trim())) {
-    const sizes = db.prepare('SELECT * FROM sizes').all();
-    const priceRows = db.prepare('SELECT size_id, base_price FROM pizza_prices WHERE pizza_id = ?').all(pizza.id);
-    const prices = {};
-    priceRows.forEach(row => { prices[row.size_id] = row.base_price; });
-    return res.render('admin-pizza-form', { pizza, sizes, prices, error: 'Descripción inválida (solo letras y espacios).' });
+    return res.render('admin-pizza-form', { pizza, sizes, prices: {}, error: 'Descripción inválida (solo letras y espacios).' });
   }
 
-  // Validar precios
-  const sizes = db.prepare('SELECT * FROM sizes').all();
   for (const size of sizes) {
     const priceValue = parseFloat(req.body['price_' + size.id] || 0);
     if (isNaN(priceValue) || priceValue < 0) {
-      const priceRows = db.prepare('SELECT size_id, base_price FROM pizza_prices WHERE pizza_id = ?').all(pizza.id);
-      const prices = {};
-      priceRows.forEach(row => { prices[row.size_id] = row.base_price; });
-      return res.render('admin-pizza-form', { pizza, sizes, prices, error: `El precio para ${size.label} no puede ser negativo.` });
+      return res.render('admin-pizza-form', { pizza, sizes, prices: {}, error: `El precio para ${size.label} no puede ser negativo.` });
     }
   }
-  db.prepare('UPDATE pizzas SET name = ?, description = ?, active = ? WHERE id = ?').run(name, description || null, active, pizza.id);
-  // Actualizar precios
+
+  await db.query('UPDATE pizzas SET name = $1, description = $2, active = $3 WHERE id = $4',
+    [name, description || null, active, pizza.id]);
+
   for (const size of sizes) {
     const priceValue = parseFloat(req.body['price_' + size.id] || 0);
-    // Usamos INSERT OR REPLACE (o podemos actualizar si existe)
-    db.prepare('INSERT OR REPLACE INTO pizza_prices (pizza_id, size_id, base_price) VALUES (?, ?, ?)').run(pizza.id, size.id, priceValue);
+    await db.query('DELETE FROM pizza_prices WHERE pizza_id = $1 AND size_id = $2', [pizza.id, size.id]);
+    await db.query('INSERT INTO pizza_prices (pizza_id, size_id, base_price) VALUES ($1, $2, $3)',
+      [pizza.id, size.id, priceValue]);
   }
+
   req.flash('success_msg', 'Pizza actualizada');
   res.redirect('/admin/pizzas');
 });
 
-app.post('/admin/pizzas/delete/:id', isAdmin, (req, res) => {
-  // Verificar que no haya order_items que referencien esta pizza
-  const count = db.prepare('SELECT COUNT(*) as count FROM order_items WHERE pizza_id = ?').get(req.params.id).count;
+app.post('/admin/pizzas/delete/:id', isAdmin, async (req, res) => {
+  const count = (await db.query('SELECT COUNT(*) as count FROM order_items WHERE pizza_id = $1', [req.params.id])).rows[0].count;
   if (count > 0) {
     req.flash('error_msg', 'No se puede eliminar, hay pedidos que la incluyen');
-    return res.redirect('/admin/pizzas'); 
+    return res.redirect('/admin/pizzas');
   }
-  db.prepare('DELETE FROM pizza_prices WHERE pizza_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM pizzas WHERE id = ?').run(req.params.id);
+  await db.query('DELETE FROM pizza_prices WHERE pizza_id = $1', [req.params.id]);
+  await db.query('DELETE FROM pizzas WHERE id = $1', [req.params.id]);
   req.flash('success_msg', 'Pizza eliminada');
   res.redirect('/admin/pizzas');
 });
 
-// ----------------------------------------------------
-// Tamaños (solo Mediana y Grande, sin multiplicador)
-// ----------------------------------------------------
-app.get('/admin/sizes', isAdmin, (req, res) => {
-  const sizes = db.prepare('SELECT * FROM sizes ORDER BY id').all();
-  res.render('admin-sizes', { sizes});
+// --- Tamaños ---
+app.get('/admin/sizes', isAdmin, async (req, res) => {
+  const sizes = (await db.query('SELECT * FROM sizes ORDER BY id')).rows;
+  res.render('admin-sizes', { sizes });
 });
 
-app.post('/admin/sizes/add', isAdmin, (req, res) => {
+app.post('/admin/sizes/add', isAdmin, async (req, res) => {
   const { label } = req.body;
-
   if (!label || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(label.trim())) {
     req.flash('error_msg', 'Etiqueta inválida (solo letras y espacios)');
     return res.redirect('/admin/sizes');
   }
 
-  const result = db.prepare('INSERT INTO sizes (label) VALUES (?)').run(label);
-  const sizeId = result.lastInsertRowid;
-  // Crear entradas en pizza_prices con precio 0.0 para cada pizza existente
-  const pizzas = db.prepare('SELECT id FROM pizzas').all();
-  const insertPrice = db.prepare('INSERT OR IGNORE INTO pizza_prices (pizza_id, size_id, base_price) VALUES (?, ?, 0.0)');
+  const result = await db.query('INSERT INTO sizes (label) VALUES ($1) RETURNING id', [label]);
+  const sizeId = result.rows[0].id;
+
+  const pizzas = (await db.query('SELECT id FROM pizzas')).rows;
   for (const p of pizzas) {
-    insertPrice.run(p.id, sizeId);
+    await db.query('INSERT INTO pizza_prices (pizza_id, size_id, base_price) VALUES ($1, $2, 0.0)',
+      [p.id, sizeId]);
   }
-  req.flash('success_msg', 'Tamaño agregado'); res.redirect('/admin/sizes');
+
+  req.flash('success_msg', 'Tamaño agregado');
+  res.redirect('/admin/sizes');
 });
 
-app.get('/admin/sizes/edit/:id', isAdmin, (req, res) => {
-  const size = db.prepare('SELECT * FROM sizes WHERE id = ?').get(req.params.id);
+app.get('/admin/sizes/edit/:id', isAdmin, async (req, res) => {
+  const size = (await db.query('SELECT * FROM sizes WHERE id = $1', [req.params.id])).rows[0];
   if (!size) return res.status(404).send('Tamaño no encontrado');
   res.render('admin-size-edit', { size });
 });
 
-app.post('/admin/sizes/edit/:id', isAdmin, (req, res) => {
+app.post('/admin/sizes/edit/:id', isAdmin, async (req, res) => {
   const { label } = req.body;
   const sizeId = req.params.id;
-  
   if (!label || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(label.trim())) {
     req.flash('error_msg', 'Etiqueta inválida');
     return res.redirect(`/admin/sizes/edit/${sizeId}`);
   }
-  
-  db.prepare('UPDATE sizes SET label = ? WHERE id = ?').run(label, req.params.id);
-  req.flash('success_msg', 'Tamaño actualizado'); res.redirect('/admin/sizes');
+  await db.query('UPDATE sizes SET label = $1 WHERE id = $2', [label, req.params.id]);
+  req.flash('success_msg', 'Tamaño actualizado');
+  res.redirect('/admin/sizes');
 });
 
-app.post('/admin/sizes/delete/:id', isAdmin, (req, res) => {
-  // No permitir borrar si hay pedidos que lo usen
-  const count = db.prepare('SELECT COUNT(*) as count FROM order_items WHERE size_id = ?').get(req.params.id).count;
+app.post('/admin/sizes/delete/:id', isAdmin, async (req, res) => {
+  const count = (await db.query('SELECT COUNT(*) as count FROM order_items WHERE size_id = $1', [req.params.id])).rows[0].count;
   if (count > 0) {
     req.flash('error_msg', 'No se puede eliminar, hay pedidos que lo usan');
     return res.redirect('/admin/sizes');
   }
-  db.prepare('DELETE FROM pizza_prices WHERE size_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM sizes WHERE id = ?').run(req.params.id);
-  req.flash('success_msg', 'Tamaño eliminado'); res.redirect('/admin/sizes');
+  await db.query('DELETE FROM pizza_prices WHERE size_id = $1', [req.params.id]);
+  await db.query('DELETE FROM sizes WHERE id = $1', [req.params.id]);
+  req.flash('success_msg', 'Tamaño eliminado');
+  res.redirect('/admin/sizes');
 });
 
-// ----------------------------------------------------
-// Toppings
-// ----------------------------------------------------
-app.get('/admin/toppings', isAdmin, (req, res) => {
-  const toppings = db.prepare('SELECT * FROM toppings ORDER BY id').all();
+// --- Toppings ---
+app.get('/admin/toppings', isAdmin, async (req, res) => {
+  const toppings = (await db.query('SELECT * FROM toppings ORDER BY id')).rows;
   res.render('admin-toppings', { toppings });
 });
 
-app.post('/admin/toppings/add', isAdmin, (req, res) => {
+app.post('/admin/toppings/add', isAdmin, async (req, res) => {
   const { name, extra_price } = req.body;
-
-  // Validar nombre: solo letras y espacios, no vacío
   if (!name || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(name.trim())) {
     req.flash('error_msg', 'Nombre inválido (solo letras y espacios)');
     return res.redirect('/admin/toppings');
   }
-
-  // Validar precio: número positivo
   const price = parseFloat(extra_price);
   if (isNaN(price) || price < 0) {
     req.flash('error_msg', 'Precio inválido (debe ser positivo)');
     return res.redirect('/admin/toppings');
   }
-
-  // Luego continuar con la inserción...
-  db.prepare('INSERT INTO toppings (name, extra_price) VALUES (?, ?)').run(name.trim(), price);
-  req.flash('success_msg', 'Ingrediente agregado'); res.redirect('/admin/toppings');
+  await db.query('INSERT INTO toppings (name, extra_price) VALUES ($1, $2)', [name.trim(), price]);
+  req.flash('success_msg', 'Ingrediente agregado');
+  res.redirect('/admin/toppings');
 });
 
-app.get('/admin/toppings/edit/:id', isAdmin, (req, res) => {
-  const topping = db.prepare('SELECT * FROM toppings WHERE id = ?').get(req.params.id);
+app.get('/admin/toppings/edit/:id', isAdmin, async (req, res) => {
+  const topping = (await db.query('SELECT * FROM toppings WHERE id = $1', [req.params.id])).rows[0];
   if (!topping) return res.status(404).send('Ingrediente no encontrado');
   res.render('admin-topping-edit', { topping });
 });
 
-app.post('/admin/toppings/edit/:id', isAdmin, (req, res) => {
+app.post('/admin/toppings/edit/:id', isAdmin, async (req, res) => {
   const { name, extra_price } = req.body;
   const id = req.params.id;
-
-  // Validar nombre
   if (!name || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(name.trim())) {
     req.flash('error_msg', 'Nombre inválido');
     return res.redirect(`/admin/toppings/edit/${id}`);
   }
-
-  // Validar precio
   const price = parseFloat(extra_price);
   if (isNaN(price) || price < 0) {
     req.flash('error_msg', 'Precio inválido');
     return res.redirect(`/admin/toppings/edit/${id}`);
   }
-
-  db.prepare('UPDATE toppings SET name = ?, extra_price = ? WHERE id = ?').run(name.trim(), price, id);
-  req.flash('success_msg', 'Ingrediente actualizado'); res.redirect('/admin/toppings');
+  await db.query('UPDATE toppings SET name = $1, extra_price = $2 WHERE id = $3', [name.trim(), price, id]);
+  req.flash('success_msg', 'Ingrediente actualizado');
+  res.redirect('/admin/toppings');
 });
 
-app.post('/admin/toppings/delete/:id', isAdmin, (req, res) => {
-  const count = db.prepare('SELECT COUNT(*) as count FROM order_item_toppings WHERE topping_id = ?').get(req.params.id).count;
+app.post('/admin/toppings/delete/:id', isAdmin, async (req, res) => {
+  const count = (await db.query('SELECT COUNT(*) as count FROM order_item_toppings WHERE topping_id = $1', [req.params.id])).rows[0].count;
   if (count > 0) {
     req.flash('error_msg', 'No se puede eliminar, está en pedidos');
     return res.redirect('/admin/toppings');
   }
-  db.prepare('DELETE FROM toppings WHERE id = ?').run(req.params.id);
-  req.flash('success_msg', 'Ingrediente eliminado'); res.redirect('/admin/toppings');
+  await db.query('DELETE FROM toppings WHERE id = $1', [req.params.id]);
+  req.flash('success_msg', 'Ingrediente eliminado');
+  res.redirect('/admin/toppings');
 });
 
-// ----------------------------------------------------
-// Bebidas
-// ----------------------------------------------------
-app.get('/admin/bebidas', isAdmin, (req, res) => {
-  const bebidas = db.prepare('SELECT * FROM bebidas ORDER BY id').all();
+// --- Bebidas ---
+app.get('/admin/bebidas', isAdmin, async (req, res) => {
+  const bebidas = (await db.query('SELECT * FROM bebidas ORDER BY id')).rows;
   res.render('admin-bebidas', { bebidas });
 });
 
-app.post('/admin/bebidas/add', isAdmin, (req, res) => {
+app.post('/admin/bebidas/add', isAdmin, async (req, res) => {
   const { name, price } = req.body;
-
-  // Validar nombre (solo letras y espacios)
   if (!name || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(name.trim())) {
     req.flash('error_msg', 'Nombre inválido (solo letras y espacios)');
     return res.redirect('/admin/bebidas');
   }
-
-  // Validar precio
   const priceValue = parseFloat(price);
   if (isNaN(priceValue) || priceValue < 0) {
     req.flash('error_msg', 'Precio inválido (debe ser positivo)');
     return res.redirect('/admin/bebidas');
   }
-
-  db.prepare('INSERT INTO bebidas (name, price, active) VALUES (?, ?, 1)').run(name.trim(), priceValue);
-  req.flash('success_msg', 'Bebida agregada'); res.redirect('/admin/bebidas');
+  await db.query('INSERT INTO bebidas (name, price, active) VALUES ($1, $2, 1)', [name.trim(), priceValue]);
+  req.flash('success_msg', 'Bebida agregada');
+  res.redirect('/admin/bebidas');
 });
 
-app.get('/admin/bebidas/edit/:id', isAdmin, (req, res) => {
-  const bebida = db.prepare('SELECT * FROM bebidas WHERE id = ?').get(req.params.id);
+app.get('/admin/bebidas/edit/:id', isAdmin, async (req, res) => {
+  const bebida = (await db.query('SELECT * FROM bebidas WHERE id = $1', [req.params.id])).rows[0];
   if (!bebida) return res.status(404).send('Bebida no encontrada');
   res.render('admin-bebida-edit', { bebida, error: null });
 });
 
-app.post('/admin/bebidas/edit/:id', isAdmin, (req, res) => {
-  const bebida = db.prepare('SELECT * FROM bebidas WHERE id = ?').get(req.params.id);
+app.post('/admin/bebidas/edit/:id', isAdmin, async (req, res) => {
+  const bebida = (await db.query('SELECT * FROM bebidas WHERE id = $1', [req.params.id])).rows[0];
   if (!bebida) return res.status(404).send('Bebida no encontrada');
-
   const { name, price, active } = req.body;
-
-  // Validar nombre
   if (!name || !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(name.trim())) {
     return res.render('admin-bebida-edit', { bebida, error: 'Nombre inválido (solo letras y espacios).' });
   }
-
-  // Validar precio
   const priceValue = parseFloat(price);
   if (isNaN(priceValue) || priceValue < 0) {
     return res.render('admin-bebida-edit', { bebida, error: 'Precio inválido (debe ser positivo).' });
   }
-
-  db.prepare('UPDATE bebidas SET name = ?, price = ?, active = ? WHERE id = ?')
-    .run(name.trim(), priceValue, active || 0, req.params.id);
-  req.flash('success_msg', 'Bebida actualizada'); res.redirect('/admin/bebidas');
+  await db.query('UPDATE bebidas SET name = $1, price = $2, active = $3 WHERE id = $4',
+    [name.trim(), priceValue, active || 0, req.params.id]);
+  req.flash('success_msg', 'Bebida actualizada');
+  res.redirect('/admin/bebidas');
 });
 
-app.post('/admin/bebidas/delete/:id', isAdmin, (req, res) => {
-  // Verificar si ya se usó en algún pedido
-  const count = db.prepare('SELECT COUNT(*) as count FROM order_bebidas WHERE bebida_id = ?').get(req.params.id).count;
+app.post('/admin/bebidas/delete/:id', isAdmin, async (req, res) => {
+  const count = (await db.query('SELECT COUNT(*) as count FROM order_bebidas WHERE bebida_id = $1', [req.params.id])).rows[0].count;
   if (count > 0) {
     req.flash('error_msg', 'No se puede eliminar, hay pedidos que la incluyen');
     return res.redirect('/admin/bebidas');
   }
-  db.prepare('DELETE FROM bebidas WHERE id = ?').run(req.params.id);
-  req.flash('success_msg', 'Bebida eliminada'); res.redirect('/admin/bebidas');
+  await db.query('DELETE FROM bebidas WHERE id = $1', [req.params.id]);
+  req.flash('success_msg', 'Bebida eliminada');
+  res.redirect('/admin/bebidas');
 });
 
-// ----------------------------------------------------
-// Pedidos
-// ----------------------------------------------------
-app.get('/admin/orders', isAdmin, (req, res) => {
+// --- Pedidos ---
+app.get('/admin/orders', isAdmin, async (req, res) => {
   const { nombre, telefono, fecha } = req.query;
-
   let sql = 'SELECT * FROM orders';
   const conditions = [];
   const params = [];
 
   if (nombre && nombre.trim() !== '') {
-    conditions.push('customer_name LIKE ?');
     params.push(`%${nombre.trim()}%`);
+    conditions.push(`customer_name LIKE $${params.length}`);
   }
-
   if (telefono && telefono.trim() !== '') {
-    conditions.push('phone LIKE ?');
     params.push(`%${telefono.trim()}%`);
+    conditions.push(`phone LIKE $${params.length}`);
   }
-
   if (fecha && fecha.trim() !== '') {
-    conditions.push('date(created_at) = ?');
     params.push(fecha.trim());
+    conditions.push(`created_at::date = $${params.length}`);
   }
 
   if (conditions.length > 0) {
     sql += ' WHERE ' + conditions.join(' AND ');
   }
-
   sql += ' ORDER BY created_at DESC';
-  const orders = db.prepare(sql).all(...params);
 
-  // Obtener items y toppings de cada orden (igual que antes)
+  const ordersResult = await db.query(sql, params);
+  const orders = ordersResult.rows;
+
   for (const order of orders) {
-    const items = db.prepare(`
+    const items = (await db.query(`
       SELECT oi.*, p.name as pizza_name, s.label as size_label
       FROM order_items oi
       JOIN pizzas p ON oi.pizza_id = p.id
       JOIN sizes s ON oi.size_id = s.id
-      WHERE oi.order_id = ?
-    `).all(order.id);
+      WHERE oi.order_id = $1
+    `, [order.id])).rows;
 
     for (const item of items) {
-      const toppingRows = db.prepare(`
+      const toppingRows = (await db.query(`
         SELECT t.name FROM order_item_toppings oit
         JOIN toppings t ON oit.topping_id = t.id
-        WHERE oit.order_item_id = ?
-      `).all(item.id);
+        WHERE oit.order_item_id = $1
+      `, [item.id])).rows;
       item.toppings = toppingRows.map(t => t.name);
     }
     order.items = items;
@@ -1052,15 +948,14 @@ app.get('/admin/orders', isAdmin, (req, res) => {
   res.render('admin-orders', { orders, nombre, telefono, fecha });
 });
 
-// Página de pedido (protegida)
-app.get('/order', isAuthenticated, (req, res) => {
-  const pizzas = db.prepare('SELECT * FROM pizzas WHERE active = 1').all();
-  const sizes = db.prepare('SELECT * FROM sizes').all();
-  const toppings = db.prepare('SELECT * FROM toppings').all();
-  const bebidas = db.prepare('SELECT * FROM bebidas WHERE active = 1').all();
+app.get('/order', isAuthenticated, async (req, res) => {
+  const pizzas = (await db.query('SELECT * FROM pizzas WHERE active = 1')).rows;
+  const sizes = (await db.query('SELECT * FROM sizes')).rows;
+  const toppings = (await db.query('SELECT * FROM toppings')).rows;
+  const bebidas = (await db.query('SELECT * FROM bebidas WHERE active = 1')).rows;
 
+  const priceRows = (await db.query('SELECT pizza_id, size_id, base_price FROM pizza_prices')).rows;
   const prices = {};
-  const priceRows = db.prepare('SELECT pizza_id, size_id, base_price FROM pizza_prices').all();
   for (const row of priceRows) {
     if (!prices[row.pizza_id]) prices[row.pizza_id] = {};
     prices[row.pizza_id][row.size_id] = row.base_price;
@@ -1069,60 +964,53 @@ app.get('/order', isAuthenticated, (req, res) => {
   res.render('order', { pizzas, sizes, toppings, prices, bebidas });
 });
 
-// Detalle del pedido para cliente
-app.get('/order-detail/:id', isAuthenticated, (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?')
-                      .get(req.params.id, req.session.user.id);
+app.get('/order-detail/:id', isAuthenticated, async (req, res) => {
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
 
-  // Obtener items (pizzas)
-  const items = db.prepare(`
+  const items = (await db.query(`
     SELECT oi.*, p.name as pizza_name, s.label as size_label
     FROM order_items oi
     JOIN pizzas p ON oi.pizza_id = p.id
     JOIN sizes s ON oi.size_id = s.id
-    WHERE oi.order_id = ?
-  `).all(order.id);
+    WHERE oi.order_id = $1
+  `, [order.id])).rows;
 
   for (const item of items) {
-    const toppingRows = db.prepare(`
+    const toppingRows = (await db.query(`
       SELECT t.name FROM order_item_toppings oit
       JOIN toppings t ON oit.topping_id = t.id
-      WHERE oit.order_item_id = ?
-    `).all(item.id);
+      WHERE oit.order_item_id = $1
+    `, [item.id])).rows;
     item.toppings = toppingRows.map(t => t.name);
   }
 
-  // Obtener bebidas
-  const bebidas = db.prepare(`
+  const bebidas = (await db.query(`
     SELECT b.name, ob.quantity, ob.line_total
     FROM order_bebidas ob
     JOIN bebidas b ON ob.bebida_id = b.id
-    WHERE ob.order_id = ?
-  `).all(order.id);
+    WHERE ob.order_id = $1
+  `, [order.id])).rows;
 
   res.render('order-detail', { order, items, bebidas });
 });
 
-app.post('/notification/:id/read', isAuthenticated, (req, res) => {
-  db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?')
-    .run(req.params.id, req.session.user.id);
+app.post('/notification/:id/read', isAuthenticated, async (req, res) => {
+  await db.query('UPDATE notifications SET is_read = 1 WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id]);
   res.json({ success: true });
 });
 
-app.post('/notification/:id/delete', isAuthenticated, (req, res) => {
-  db.prepare('DELETE FROM notifications WHERE id = ? AND user_id = ?')
-    .run(req.params.id, req.session.user.id);
+app.post('/notification/:id/delete', isAuthenticated, async (req, res) => {
+  await db.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id]);
   res.json({ success: true });
 });
 
-app.post('/notifications/delete-all', isAuthenticated, (req, res) => {
-  db.prepare('DELETE FROM notifications WHERE user_id = ?')
-    .run(req.session.user.id);
+app.post('/notifications/delete-all', isAuthenticated, async (req, res) => {
+  await db.query('DELETE FROM notifications WHERE user_id = $1', [req.session.user.id]);
   res.json({ success: true });
 });
 
-app.post('/admin/orders/:id/status', isAdmin, (req, res) => {
+app.post('/admin/orders/:id/status', isAdmin, async (req, res) => {
   const { status } = req.body;
   const validStatuses = ['pending', 'ready', 'delivered'];
   if (!validStatuses.includes(status)) {
@@ -1130,25 +1018,25 @@ app.post('/admin/orders/:id/status', isAdmin, (req, res) => {
     return res.redirect('/admin/orders');
   }
 
-  // Obtener el pedido antes de usarlo
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1', [req.params.id])).rows[0];
   if (!order) {
     req.flash('error_msg', 'Pedido no encontrado');
     return res.redirect('/admin/orders');
   }
 
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, order.id);
+  await db.query('UPDATE orders SET status = $1 WHERE id = $2', [status, order.id]);
 
   if (status === 'ready' || status === 'delivered') {
     const message = status === 'ready'
       ? `Tu pedido #${order.id} está listo para recoger.`
       : `Tu pedido #${order.id} ha sido entregado. ¡Buen provecho!`;
 
-    db.prepare('INSERT INTO notifications (user_id, order_id, message) VALUES (?, ?, ?)')
-      .run(order.user_id, order.id, message);
+    const notif = await db.query('INSERT INTO notifications (user_id, order_id, message) VALUES ($1, $2, $3) RETURNING id',
+      [order.user_id, order.id, message]);
+    const notifId = notif.rows[0].id;
 
     io.to(`user_${order.user_id}`).emit('notification', {
-      id: db.prepare('SELECT last_insert_rowid() as id').get().id,
+      id: notifId,
       message,
       order_id: order.id,
       is_read: 0,
@@ -1160,68 +1048,60 @@ app.post('/admin/orders/:id/status', isAdmin, (req, res) => {
   res.redirect('/admin/orders');
 });
 
-// Ruta para imprimir comanda
-app.get('/admin/orders/:id/print', isAdmin, (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+app.get('/admin/orders/:id/print', isAdmin, async (req, res) => {
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1', [req.params.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
 
-  // Obtener items (pizzas)
-  const items = db.prepare(`
+  const items = (await db.query(`
     SELECT oi.*, p.name as pizza_name, s.label as size_label
     FROM order_items oi
     JOIN pizzas p ON oi.pizza_id = p.id
     JOIN sizes s ON oi.size_id = s.id
-    WHERE oi.order_id = ?
-  `).all(order.id);
+    WHERE oi.order_id = $1
+  `, [order.id])).rows;
 
   for (const item of items) {
-    const toppingRows = db.prepare(`
+    const toppingRows = (await db.query(`
       SELECT t.name FROM order_item_toppings oit
       JOIN toppings t ON oit.topping_id = t.id
-      WHERE oit.order_item_id = ?
-    `).all(item.id);
+      WHERE oit.order_item_id = $1
+    `, [item.id])).rows;
     item.toppings = toppingRows.map(t => t.name);
   }
 
-  // Obtener bebidas
-  const bebidas = db.prepare(`
+  const bebidas = (await db.query(`
     SELECT b.name, ob.quantity, ob.line_total
     FROM order_bebidas ob
     JOIN bebidas b ON ob.bebida_id = b.id
-    WHERE ob.order_id = ?
-  `).all(order.id);
+    WHERE ob.order_id = $1
+  `, [order.id])).rows;
 
   res.render('print-order', { order, items, bebidas });
 });
 
-// Eliminar pedido
-app.post('/admin/orders/delete/:id', isAdmin, (req, res) => {
-  db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id);
-  req.flash('success_msg', 'Pedido eliminado'); res.redirect('/admin/orders');
+app.post('/admin/orders/delete/:id', isAdmin, async (req, res) => {
+  await db.query('DELETE FROM orders WHERE id = $1', [req.params.id]);
+  req.flash('success_msg', 'Pedido eliminado');
+  res.redirect('/admin/orders');
 });
 
-//Eliminar todos los pedidos
-
-app.post('/admin/orders/delete-all', isAdmin, (req, res) => {
-  db.prepare('DELETE FROM orders').run();
+app.post('/admin/orders/delete-all', isAdmin, async (req, res) => {
+  await db.query('DELETE FROM orders');
   req.flash('success_msg', 'Todos los pedidos han sido eliminados');
   res.redirect('/admin/orders');
 });
 
-//--------//
-// PAGOS -//
-//--------//
-
-app.get('/payment/:id', isAuthenticated, (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(req.params.id, req.session.user.id);
+// --- Pagos ---
+app.get('/payment/:id', isAuthenticated, async (req, res) => {
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
   res.render('payment', { order, error: null, paymentData: paymentInfo[order.payment_method] || null });
 });
 
-app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtection, (req, res) => {
+app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtection, async (req, res) => {
   res.locals.csrfToken = req.csrfToken();
 
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(req.params.id, req.session.user.id);
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
 
   const { payment_ref } = req.body;
@@ -1230,7 +1110,6 @@ app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtecti
     payment_receipt = '/uploads/' + req.file.filename;
   }
 
-  // Validar que al menos tenga referencia o comprobante
   if (!payment_ref && !payment_receipt) {
     return res.render('payment', { order, error: 'Debes ingresar número de referencia o subir comprobante' });
   }
@@ -1239,38 +1118,49 @@ app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtecti
     return res.render('payment', { order, error: 'La referencia debe contener exactamente 6 dígitos.' });
   }
 
-  db.prepare('UPDATE orders SET payment_status = ?, payment_ref = ?, payment_receipt = ? WHERE id = ?')
-    .run('submitted', payment_ref || null, payment_receipt, order.id);
+  await db.query('UPDATE orders SET payment_status = $1, payment_ref = $2, payment_receipt = $3 WHERE id = $4',
+    ['submitted', payment_ref || null, payment_receipt, order.id]);
 
-  // Emitir evento de pago realizado
   io.emit('pago_realizado', { id: order.id, customer_name: order.customer_name, total: order.total });
 
-  res.redirect(`/order-confirmation/${order.id}`); // o simplemente mostrar confirmación genérica
+  res.redirect(`/order-confirmation/${order.id}`);
 });
 
-app.get('/order-confirmation/:id', isAuthenticated, (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(req.params.id, req.session.user.id);
+app.get('/order-confirmation/:id', isAuthenticated, async (req, res) => {
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
 
-  // Obtener items y bebidas para mostrar
-  const items = db.prepare(`
+  const items = (await db.query(`
     SELECT oi.*, p.name as pizza_name, s.label as size_label
     FROM order_items oi
     JOIN pizzas p ON oi.pizza_id = p.id
     JOIN sizes s ON oi.size_id = s.id
-    WHERE oi.order_id = ?
-  `).all(order.id);
-  const details = items.map(item => {
-    const toppingRows = db.prepare(`SELECT t.name FROM order_item_toppings oit JOIN toppings t ON oit.topping_id = t.id WHERE oit.order_item_id = ?`).all(item.id);
-    return {
+    WHERE oi.order_id = $1
+  `, [order.id])).rows;
+
+  const details = [];
+  for (const item of items) {
+    const toppingRows = (await db.query(`
+      SELECT t.name FROM order_item_toppings oit
+      JOIN toppings t ON oit.topping_id = t.id
+      WHERE oit.order_item_id = $1
+    `, [item.id])).rows;
+    details.push({
       quantity: item.quantity,
       pizzaName: item.pizza_name,
       sizeLabel: item.size_label,
       toppings: toppingRows.map(t => t.name),
       lineTotal: item.line_total
-    };
-  });
-  const bebidas = db.prepare(`SELECT b.name, ob.quantity, ob.line_total FROM order_bebidas ob JOIN bebidas b ON ob.bebida_id = b.id WHERE ob.order_id = ?`).all(order.id);
+    });
+  }
+
+  const bebidas = (await db.query(`
+    SELECT b.name, ob.quantity, ob.line_total
+    FROM order_bebidas ob
+    JOIN bebidas b ON ob.bebida_id = b.id
+    WHERE ob.order_id = $1
+  `, [order.id])).rows;
+
   const bebidaDetails = bebidas.map(b => ({
     name: b.name,
     quantity: b.quantity,
@@ -1287,7 +1177,7 @@ app.get('/order-confirmation/:id', isAuthenticated, (req, res) => {
   });
 });
 
-app.post('/admin/orders/:id/payment', isAdmin, (req, res) => {
+app.post('/admin/orders/:id/payment', isAdmin, async (req, res) => {
   const { payment_status } = req.body;
 
   if (!['paid', 'rejected'].includes(payment_status)) {
@@ -1295,22 +1185,22 @@ app.post('/admin/orders/:id/payment', isAdmin, (req, res) => {
     return res.redirect('/admin/orders');
   }
 
-  // Obtener el pedido antes de usarlo
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+  const order = (await db.query('SELECT * FROM orders WHERE id = $1', [req.params.id])).rows[0];
   if (!order) {
     req.flash('error_msg', 'Pedido no encontrado');
     return res.redirect('/admin/orders');
   }
 
-  db.prepare('UPDATE orders SET payment_status = ? WHERE id = ?').run(payment_status, order.id);
+  await db.query('UPDATE orders SET payment_status = $1 WHERE id = $2', [payment_status, order.id]);
 
   if (payment_status === 'paid') {
     const message = `Tu pedido #${order.id} ha sido confirmado y está en preparación.`;
-    db.prepare('INSERT INTO notifications (user_id, order_id, message) VALUES (?, ?, ?)')
-      .run(order.user_id, order.id, message);
+    const notif = await db.query('INSERT INTO notifications (user_id, order_id, message) VALUES ($1, $2, $3) RETURNING id',
+      [order.user_id, order.id, message]);
+    const notifId = notif.rows[0].id;
 
     io.to(`user_${order.user_id}`).emit('notification', {
-      id: db.prepare('SELECT last_insert_rowid() as id').get().id,
+      id: notifId,
       message,
       order_id: order.id,
       is_read: 0,
@@ -1322,7 +1212,6 @@ app.post('/admin/orders/:id/payment', isAdmin, (req, res) => {
   res.redirect('/admin/orders');
 });
 
-// Iniciar servidor
 server.listen(PORT, () => {
   console.log(`🍕 Servidor corriendo en http://localhost:${PORT}`);
 });
