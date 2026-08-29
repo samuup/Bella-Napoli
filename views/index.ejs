@@ -43,7 +43,7 @@
             <% if (currentUser.role === 'admin') { %>
               <a href="/admin" class="bg-white/20 text-[#f5efe6] border border-white/50 px-4 py-2 rounded-full font-semibold hover:bg-[#f5efe6] hover:text-red-700 transition shadow">⚙️ Admin</a>
             <% } %>
-            <a href="/order" class="bg-[#f5efe6] text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Hacer pedido</a>
+            <a href="/order" class="bg-[#e8dccc] text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Hacer pedido</a>
             <div class="relative group">
               <button class="flex items-center space-x-1 text-[#f5efe6] hover:text-red-200 transition">
                 <span>Hola, <%= currentUser.name.split(' ')[0] %></span>
@@ -55,7 +55,7 @@
             </div>
           </div>
         <% } else { %>
-          <a href="/login" class="bg-white text-red-700 px-6 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Iniciar sesión</a>
+          <a href="/login" class="bg-[#e8dccc] text-red-700 px-6 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Iniciar sesión</a>
         <% } %>
       </nav>
     </div>
