@@ -11,7 +11,7 @@
     h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
   </style>
 </head>
-<body class="bg-stone-50 flex">
+<body class="bg-[#e8dccc] flex">
   <%- include('admin-sidebar') %>
   <div class="ml-64 p-8 flex-1">
     <div class="flex justify-between items-center mb-8">
@@ -27,7 +27,7 @@
     <% } %>
 
     <!-- Formulario para agregar tamaño -->
-    <form action="/admin/sizes/add" method="POST" id="sizeForm" class="bg-white rounded-2xl shadow-md p-6 mb-8 max-w-md">
+    <form action="/admin/sizes/add" method="POST" id="sizeForm" class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-8 max-w-md">
       <%- include('csrf') %>
       <h2 class="text-xl font-bold font-serif mb-4">Nuevo tamaño</h2>
       <label class="block mb-4">
@@ -42,7 +42,7 @@
     <!-- Listado de tamaños -->
     <div class="grid md:grid-cols-3 gap-4">
       <% sizes.forEach(size => { %>
-        <div class="bg-white rounded-xl shadow-md p-5 flex items-center justify-between">
+        <div class="bg-[#f5efe6] rounded-xl shadow-md p-5 flex items-center justify-between">
           <span class="text-xl font-semibold text-stone-800"><%= size.label %></span>
           <div class="flex space-x-2">
             <a href="/admin/sizes/edit/<%= size.id %>" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition" title="Editar">

@@ -11,7 +11,7 @@
     h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
   </style>
 </head>
-<body class="bg-stone-50 flex">
+<body class="bg-[#e8dccc] flex">
   <%- include('admin-sidebar') %>
   <div class="ml-64 p-8 flex-1">
     <h1 class="text-4xl font-bold font-serif text-stone-800 mb-8">Dashboard</h1>
@@ -26,14 +26,14 @@
 
     <!-- Tarjetas principales -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-      <div class="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
           <p class="text-sm text-stone-500 mb-1">Ingresos totales</p>
           <p class="text-3xl font-bold text-green-700">$<%= totalRevenue.toFixed(2) %></p>
         </div>
         <span class="text-4xl">💰</span>
       </div>
-      <div class="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
           <p class="text-sm text-stone-500 mb-1">Pedidos hoy</p>
           <p class="text-3xl font-bold text-stone-800"><%= ordersToday %></p>
@@ -41,14 +41,14 @@
         </div>
         <span class="text-4xl">📦</span>
       </div>
-      <div class="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
           <p class="text-sm text-stone-500 mb-1">Pizzas activas</p>
           <p class="text-3xl font-bold text-stone-800"><%= activePizzas %></p>
         </div>
         <span class="text-4xl">🍕</span>
       </div>
-      <div class="bg-white rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
           <p class="text-sm text-stone-500 mb-1">Ingredientes extra</p>
           <p class="text-3xl font-bold text-stone-800"><%= totalToppings %></p>
@@ -58,7 +58,7 @@
     </div>
 
     <!-- Estados de pedidos (barras) -->
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-10">
+    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-10">
       <h2 class="text-2xl font-bold font-serif text-stone-800 mb-4">Pedidos por estado</h2>
       <div class="space-y-4">
         <% 
@@ -83,7 +83,7 @@
     <!-- Rankings -->
     <div class="grid md:grid-cols-2 gap-6 mb-10">
       <!-- Pizzas más vendidas -->
-      <div class="bg-white rounded-2xl shadow-md p-6">
+      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
         <h2 class="text-xl font-bold font-serif text-stone-800 mb-4">🍕 Más vendidas</h2>
         <% if (topPizzas.length > 0) { %>
           <ul class="space-y-2">
@@ -99,7 +99,7 @@
         <% } %>
       </div>
       <!-- Ingredientes más pedidos -->
-      <div class="bg-white rounded-2xl shadow-md p-6">
+      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
         <h2 class="text-xl font-bold font-serif text-stone-800 mb-4">🧀 Extras más pedidos</h2>
         <% if (topToppings.length > 0) { %>
           <ul class="space-y-2">
@@ -117,7 +117,7 @@
     </div>
 
     <!-- Tamaños más comprados -->
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-10">
+    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-10">
       <h2 class="text-xl font-bold font-serif text-stone-800 mb-4">📏 Tamaños preferidos</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <% topSizes.forEach(size => { %>
@@ -130,7 +130,7 @@
     </div>
 
     <!-- Últimos pedidos -->
-    <div class="bg-white rounded-2xl shadow-md p-6">
+    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold font-serif text-stone-800">🕒 Últimos pedidos</h2>
         <a href="/admin/orders" class="text-red-600 hover:underline text-sm">Ver todos →</a>

@@ -644,9 +644,9 @@ app.post('/admin/pizzas/add', isAdmin, async (req, res) => {
     return res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: 'Nombre de pizza inválido (solo letras y espacios).' });
   }
 
-  if (description && !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(description.trim())) {
+  if (description && !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s.,]+$/.test(description.trim())) {
     const sizes = (await db.query('SELECT * FROM sizes')).rows;
-    return res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: 'La descripción solo puede contener letras y espacios.' });
+    return res.render('admin-pizza-form', { pizza: null, sizes, prices: {}, error: 'La descripción no puede contener números.' });
   }
 
   const sizes = (await db.query('SELECT * FROM sizes')).rows;
@@ -692,8 +692,8 @@ app.post('/admin/pizzas/edit/:id', isAdmin, async (req, res) => {
     return res.render('admin-pizza-form', { pizza, sizes, prices: {}, error: 'Nombre inválido.' });
   }
 
-  if (description && !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(description.trim())) {
-    return res.render('admin-pizza-form', { pizza, sizes, prices: {}, error: 'Descripción inválida (solo letras y espacios).' });
+  if (description && !/^[A-Za-záéíóúüñÁÉÍÓÚÜÑ\s.,]+$/.test(description.trim())) {
+    return res.render('admin-pizza-form', { pizza, sizes, prices: {}, error: 'Descripción inválida (no puede contener números).' });
   }
 
   for (const size of sizes) {
@@ -1110,12 +1110,14 @@ app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtecti
     payment_receipt = '/uploads/' + req.file.filename;
   }
 
+  const paymentData = paymentInfo[order.payment_method] || null;
+
   if (!payment_ref && !payment_receipt) {
-    return res.render('payment', { order, error: 'Debes ingresar número de referencia o subir comprobante' });
+    return res.render('payment', { order, error: 'Debes ingresar número de referencia o subir comprobante', paymentData });
   }
 
   if (payment_ref && !/^\d{6}$/.test(payment_ref)) {
-    return res.render('payment', { order, error: 'La referencia debe contener exactamente 6 dígitos.' });
+    return res.render('payment', { order, error: 'La referencia debe contener exactamente 6 dígitos.', paymentData });
   }
 
   await db.query('UPDATE orders SET payment_status = $1, payment_ref = $2, payment_receipt = $3 WHERE id = $4',

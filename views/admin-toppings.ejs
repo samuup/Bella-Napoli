@@ -11,7 +11,7 @@
     h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
   </style>
 </head>
-<body class="bg-stone-50 flex">
+<body class="bg-[#e8dccc] flex">
   <%- include('admin-sidebar') %>
   <div class="ml-64 p-8 flex-1">
     <div class="flex justify-between items-center mb-8">
@@ -27,7 +27,7 @@
     <% } %>
 
     <!-- Formulario de nuevo ingrediente -->
-    <form action="/admin/toppings/add" method="POST" id="toppingForm" class="bg-white rounded-2xl shadow-md p-6 mb-8 max-w-md">
+    <form action="/admin/toppings/add" method="POST" id="toppingForm" class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-8 max-w-md">
       <%- include('csrf') %>
       <h2 class="text-xl font-bold font-serif mb-4">Nuevo ingrediente</h2>
       <label class="block mb-3">
@@ -51,7 +51,7 @@
     <!-- Listado de ingredientes -->
     <div class="grid md:grid-cols-3 gap-4">
       <% toppings.forEach(topping => { %>
-        <div class="bg-white rounded-xl shadow-md p-5 flex items-center justify-between">
+        <div class="bg-[#f5efe6] rounded-xl shadow-md p-5 flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-stone-800"><%= topping.name %></h3>
             <p class="text-sm text-stone-500">+$<%= topping.extra_price.toFixed(2) %></p>

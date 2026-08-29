@@ -13,23 +13,23 @@
     .hero-pattern { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,160L48,176C96,192,192,224,288,229.3C384,235,480,213,576,186.7C672,160,768,128,864,128C960,128,1056,160,1152,176C1248,192,1344,192,1392,192L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>'); background-size: cover; background-position: bottom; }
   </style>
 </head>
-<body class="bg-stone-50 min-h-screen">
+<body class="bg-[#e8dccc] min-h-screen">
   <!-- Header -->
   <header class="bg-red-700 text-white shadow-lg sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
       <a href="/" class="flex items-center space-x-2">
         <span class="text-3xl">🍕</span>
-        <h1 class="text-2xl font-bold font-serif tracking-wide">Bella Napoli</h1>
+        <h1 class="text-2xl font-bold font-serif tracking-wide text-[#f5efe6]">Bella Napoli</h1>
       </a>
       <nav class="flex items-center space-x-6">
-        <a href="/" class="hover:text-red-200 transition">Menú</a>
+        <a href="/" class="hover:text-[#f5efe6] transition">Menú</a>
         <div class="relative">
-          <button id="notificationBell" class="text-white hover:text-red-200 transition relative">
+          <button id="notificationBell" class="text-[#f5efe6] hover:text-red-200 transition relative">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
             <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
           </button>
-          <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl overflow-hidden z-50">
-            <div class="bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
+          <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-64 bg-[#f5efe6] rounded-lg shadow-xl overflow-hidden z-50">
+            <div class="bg-[#f5efe6] border-b border-stone-200 px-4 py-3 flex items-center justify-between">
               <h3 class="font-bold font-serif text-stone-800 text-lg">Notificaciones</h3>
               <button id="clearAllNotifications" class="text-stone-500 hover:text-red-600 text-xs underline">Limpiar todas</button>
             </div>
@@ -41,16 +41,16 @@
         <% if (currentUser) { %>
           <div class="flex items-center space-x-4">
             <% if (currentUser.role === 'admin') { %>
-              <a href="/admin" class="bg-white/20 text-white border border-white/50 px-4 py-2 rounded-full font-semibold hover:bg-white hover:text-red-700 transition shadow">⚙️ Admin</a>
+              <a href="/admin" class="bg-white/20 text-[#f5efe6] border border-white/50 px-4 py-2 rounded-full font-semibold hover:bg-[#f5efe6] hover:text-red-700 transition shadow">⚙️ Admin</a>
             <% } %>
-            <a href="/order" class="bg-white text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Hacer pedido</a>
+            <a href="/order" class="bg-[#f5efe6] text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Hacer pedido</a>
             <div class="relative group">
-              <button class="flex items-center space-x-1 text-white hover:text-red-200 transition">
+              <button class="flex items-center space-x-1 text-[#f5efe6] hover:text-red-200 transition">
                 <span>Hola, <%= currentUser.name.split(' ')[0] %></span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
               </button>
-              <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <a href="/logout" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cerrar sesión</a>
+              <div class="absolute right-0 mt-2 w-48 bg-[#f5efe6] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <a href="/logout" class="block px-4 py-2 text-stone-700 hover:bg-gray-100 rounded-lg">Cerrar sesión</a>
               </div>
             </div>
           </div>
@@ -64,12 +64,12 @@
   <!-- Hero -->
   <section class="hero-pattern bg-red-600 text-white py-20">
     <div class="max-w-7xl mx-auto px-4 text-center">
-      <h2 class="text-5xl md:text-6xl font-bold font-serif mb-6">El auténtico sabor italiano</h2>
-      <p class="text-xl md:text-2xl mb-10 text-red-100 max-w-2xl mx-auto">Pizzas artesanales horneadas en horno de leña con ingredientes frescos</p>
+      <h2 class="text-5xl md:text-6xl font-bold font-serif mb-6 text-[#f5efe6]">El auténtico sabor italiano</h2>
+      <p class="text-xl md:text-2xl mb-10 max-w-2xl mx-auto text-[#f5efe6]">Pizzas artesanales horneadas en horno de leña con ingredientes frescos</p>
       <% if (currentUser) { %>
-        <a href="/order" class="inline-block bg-white text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Hacer mi pedido</a>
+        <a href="/order" class="inline-block bg-[#f5efe6] text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Hacer mi pedido</a>
       <% } else { %>
-        <a href="/login" class="inline-block bg-white text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Empezar a pedir</a>
+        <a href="/login" class="inline-block bg-[#f5efe6] text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Empezar a pedir</a>
       <% } %>
     </div>
   </section>
@@ -80,27 +80,23 @@
     
     <div class="grid md:grid-cols-2 gap-8">
       <% pizzas.forEach(pizza => { %>
-        <div class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+        <div class="bg-[#f5efe6] rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
           <div class="p-6 flex justify-between items-start">
             <div class="flex-1">
               <h3 class="text-2xl font-bold text-stone-800 mb-2"><%= pizza.name %></h3>
               <p class="text-stone-500 mb-4"><%= pizza.description %></p>
               <% if (prices[pizza.id]) { %>
-                <% const minPrice = Math.min(...Object.values(prices[pizza.id])); %>
-                <div class="flex items-baseline space-x-2">
-                  <span class="text-sm text-stone-400">Desde</span>
-                  <span class="text-3xl font-bold text-red-600">$<%= minPrice.toFixed(2) %></span>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <% sizes.forEach(size => { %>
+                    <div class="bg-[#f5efe6] border border-stone-200 rounded-lg px-3 py-1 text-center">
+                      <span class="block text-xs text-stone-500"><%= size.label %></span>
+                      <span class="font-bold text-red-600">$<%= prices[pizza.id][size.id] ? prices[pizza.id][size.id].toFixed(2) : '0.00' %></span>
+                    </div>
+                  <% }) %>
                 </div>
               <% } %>
             </div>
             <div class="text-7xl ml-4 transform group-hover:scale-110 transition">🍕</div>
-          </div>
-          <div class="px-6 pb-6">
-            <div class="flex flex-wrap gap-2 text-xs text-stone-400">
-              <% sizes.forEach(size => { %>
-                <span class="bg-stone-100 px-2 py-1 rounded-full"><%= size.label %></span>
-              <% }) %>
-            </div>
           </div>
         </div>
       <% }) %>

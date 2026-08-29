@@ -11,7 +11,7 @@
     h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
   </style>
 </head>
-<body class="bg-stone-50 flex">
+<body class="bg-[#e8dccc] flex">
   <%- include('admin-sidebar') %>
   <div class="ml-64 p-8 flex-1">
     <h1 class="text-4xl font-bold font-serif text-stone-800 mb-8">Editar Bebida</h1>
@@ -23,7 +23,7 @@
     <% if (error) { %>
       <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-2xl mb-6"><%= error %></div>
     <% } %>
-    <form action="/admin/bebidas/edit/<%= bebida.id %>" method="POST" class="bg-white rounded-2xl shadow-md p-6 max-w-md">
+    <form action="/admin/bebidas/edit/<%= bebida.id %>" method="POST" class="bg-[#f5efe6] rounded-2xl shadow-md p-6 max-w-md">
       <%- include('csrf') %>
       <label class="block mb-4">
         <span class="text-stone-700 font-medium">Nombre</span>

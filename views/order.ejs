@@ -9,7 +9,6 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
-        /* Animación pop al marcar (opcional) */
     @keyframes pop {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
@@ -18,7 +17,6 @@
     .animate-pop {
       animation: pop 0.3s ease;
     }
-    /* Checkmark */
     .custom-checkbox:checked {
       background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
       background-size: 100% 100%;
@@ -31,7 +29,7 @@
     }
   </style>
 </head>
-<body class="bg-stone-50 min-h-screen">
+<body class="bg-[#e8dccc] min-h-screen">
   <header class="bg-red-700 text-white shadow-lg sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
       <a href="/" class="flex items-center space-x-2">
@@ -50,10 +48,12 @@
 
     <form action="/order" method="POST" id="orderForm">
       <%- include('csrf') %>
-      <!-- Pizzas -->
-      <section class="mb-8">
+
+      <!-- Paso 1: Pizzas -->
+      <section id="step-1" class="step">
+        <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">🍕 Elige tus pizzas</h3>
         <% pizzas.forEach((pizza, idx) => { %>
-          <div class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all mb-4 overflow-hidden border border-stone-100">
+          <div class="bg-[#f5efe6] rounded-2xl shadow-md hover:shadow-lg transition-all mb-4 overflow-hidden border border-stone-100">
             <div class="p-5 flex items-center justify-between cursor-pointer select-none" onclick="this.parentElement.querySelector('.pizza-check').click()">
               <div class="flex items-center space-x-4">
                 <input type="checkbox" name="pizzas[<%= idx %>][selected]" value="1"
@@ -107,12 +107,26 @@
             </div>
           </div>
         <% }) %>
+        <button type="button" onclick="nextStep(2)" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
+          Siguiente →
+        </button>
       </section>
-      <!-- Bebidas -->
-      <section class="mb-8">
+
+      <!-- Paso 2: Pregunta por bebidas -->
+      <section id="step-2" class="step hidden">
+        <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">¿Deseas agregar bebidas o acompañantes?</h3>
+        <div class="flex gap-4">
+          <button type="button" onclick="chooseBebidas(true)" class="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-8 rounded-full transition">Sí, quiero bebidas</button>
+          <button type="button" onclick="chooseBebidas(false)" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 px-8 rounded-full transition">No, gracias</button>
+        </div>
+        <button type="button" onclick="prevStep(1)" class="mt-6 text-stone-500 hover:text-stone-700 transition">← Atrás</button>
+      </section>
+
+      <!-- Paso 3: Bebidas (si eligió sí) -->
+      <section id="step-3" class="step hidden">
         <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">🥤 Bebidas</h3>
         <% bebidas.forEach(bebida => { %>
-          <div class="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all mb-4 p-5 flex items-center justify-between border border-stone-100">
+          <div class="bg-[#f5efe6] rounded-2xl shadow-md hover:shadow-lg transition-all mb-4 p-5 flex items-center justify-between border border-stone-100">
             <div class="flex items-center space-x-4">
               <span class="text-3xl">🥤</span>
               <div>
@@ -128,53 +142,60 @@
             </div>
           </div>
         <% }) %>
-      </section>
-      <!-- Datos y pago -->
-      <section class="bg-white rounded-2xl shadow-md p-6 mb-6">
-        <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">Datos de contacto</h3>
-        <div class="grid md:grid-cols-2 gap-6">
-          <label class="block">
-            <span class="text-sm font-medium text-stone-600">Teléfono</span>
-            <input type="tel" name="phone" id="phoneInput" required 
-                   placeholder="0000-0000000" maxlength="12"
-                   pattern="^\d{4}-\d{7}$" 
-                   class="mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
-                <span id="phoneError" class="text-red-500 text-sm hidden mt-1">⛔ Código de área inexistente</span>
-          </label>
-          <label class="block mb-2">Hora de recogida:
-            <input type="time" name="pickup_time" id="pickupTime" required
-            min="17:00" max="23:59"
-            class="border rounded p-2 w-full">
-            <span id="timeError" class="text-red-500 text-sm hidden mt-1">⛔ El horario de recogida es de 5:00 PM a 11:59 PM</span>
-          </label>
-          <label class="block md:col-span-2">
-            <span class="text-sm font-medium text-stone-600">Método de pago</span>
-            <select name="payment_method" id="paymentMethod" required 
-                    class="mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
-              <option value="">Selecciona...</option>
-              <option value="Efectivo en local">Efectivo en local</option>
-              <option value="Pago móvil">Pago móvil</option>
-              <option value="Transferencia bancaria">Transferencia bancaria</option>
-              <option value="Binance">Binance</option>
-              <option value="Zelle">Zelle</option>
-            </select>
-          </label>
-        </div>
+        <button type="button" onclick="nextStep(4)" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
+          Siguiente →
+        </button>
+        <button type="button" onclick="prevStep(2)" class="mt-4 text-stone-500 hover:text-stone-700 transition">← Atrás</button>
       </section>
 
-      <!-- Resumen flotante -->
-      <div id="orderSummary" class="bg-white rounded-2xl shadow-md p-6 mb-6 hidden sticky bottom-4 border-l-4 border-red-600">
-        <h3 class="text-xl font-bold font-serif mb-4">Tu pedido</h3>
-        <ul id="summaryList" class="space-y-2"></ul>
-        <div class="flex justify-between items-center mt-4 pt-4 border-t">
-          <span class="text-lg font-bold">Total</span>
-          <span class="text-2xl font-bold text-red-600">$<span id="totalPrice">0.00</span></span>
+      <!-- Paso 4: Datos de contacto -->
+      <section id="step-4" class="step hidden">
+        <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-6">
+          <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">Datos de contacto</h3>
+          <div class="grid md:grid-cols-2 gap-6">
+            <label class="block">
+              <span class="text-sm font-medium text-stone-600">Teléfono</span>
+              <input type="tel" name="phone" id="phoneInput" required 
+                     placeholder="0000-0000000" maxlength="12"
+                     pattern="^\d{4}-\d{7}$" 
+                     class="mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
+              <span id="phoneError" class="text-red-500 text-sm hidden mt-1">⛔ Código de área inexistente</span>
+            </label>
+            <label class="block">Hora de recogida:
+              <input type="time" name="pickup_time" id="pickupTime" required
+              min="17:00" max="23:59"
+              class="border rounded p-2 w-full">
+              <span id="timeError" class="text-red-500 text-sm hidden mt-1">⛔ El horario de recogida es de 5:00 PM a 11:59 PM</span>
+            </label>
+            <label class="block md:col-span-2">
+              <span class="text-sm font-medium text-stone-600">Método de pago</span>
+              <select name="payment_method" id="paymentMethod" required 
+                      class="mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
+                <option value="">Selecciona...</option>
+                <option value="Efectivo en local">Efectivo en local</option>
+                <option value="Pago móvil">Pago móvil</option>
+                <option value="Transferencia bancaria">Transferencia bancaria</option>
+                <option value="Binance">Binance</option>
+                <option value="Zelle">Zelle</option>
+              </select>
+            </label>
+          </div>
         </div>
-      </div>
 
-      <button type="submit" id="submitOrderBtn" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
-        Enviar pedido 🍕
-      </button>
+        <div id="orderSummary" class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-6 hidden border-l-4 border-red-600">
+          <h3 class="text-xl font-bold font-serif mb-4">Tu pedido</h3>
+          <ul id="summaryList" class="space-y-2"></ul>
+          <div class="flex justify-between items-center mt-4 pt-4 border-t">
+            <span class="text-lg font-bold">Total</span>
+            <span class="text-2xl font-bold text-red-600">$<span id="totalPrice">0.00</span></span>
+          </div>
+        </div>
+
+        <button type="submit" id="submitOrderBtn" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
+          Enviar pedido 🍕
+        </button>
+        <button type="button" onclick="prevStep(3)" class="mt-4 text-stone-500 hover:text-stone-700 transition">← Atrás</button>
+      </section>
     </form>
   </main>
 
@@ -187,88 +208,113 @@
   <script>
     const pizzaPrices = JSON.parse(document.getElementById('prices-data').textContent);
     const toppingsList = JSON.parse(document.getElementById('toppings-data').textContent);
-    const pizzaNames = JSON.parse(document.getElementById('names-data').textContent); // NUEVO
+    const pizzaNames = JSON.parse(document.getElementById('names-data').textContent);
     const checkboxes = document.querySelectorAll('.pizza-check');
     const orderSummary = document.getElementById('orderSummary');
     const summaryList = document.getElementById('summaryList');
     const totalSpan = document.getElementById('totalPrice');
     const bebidasList = JSON.parse(document.getElementById('bebidas-data').textContent);
 
+    // Control de pasos
+    let currentStep = 1;
+    let wantsBebidas = false;
+
+    function showStep(step) {
+      document.querySelectorAll('.step').forEach(s => s.classList.add('hidden'));
+      document.getElementById('step-' + step).classList.remove('hidden');
+      currentStep = step;
+    }
+
+    function nextStep(step) {
+      showStep(step);
+    }
+
+    function prevStep(step) {
+      if (currentStep === 4 && !wantsBebidas) {
+        showStep(2);
+      } else {
+        showStep(step);
+      }
+    }
+
+    function chooseBebidas(wants) {
+      wantsBebidas = wants;
+      if (wants) {
+        showStep(3);
+      } else {
+        showStep(4);
+      }
+    }
+
     function updateSummary() {
-        let total = 0;
-        summaryList.innerHTML = '';
+      let total = 0;
+      summaryList.innerHTML = '';
 
-        checkboxes.forEach(cb => {
-            if (cb.checked) {
-            // Extraer el índice del nombre del checkbox: pizzas[0][selected] -> 0
-            const idxMatch = cb.name.match(/\[(\d+)\]/);
-            if (!idxMatch) return;
-            const idx = parseInt(idxMatch[1]);
-            const pizzaId = idx + 1; // porque los IDs empiezan en 1
+      checkboxes.forEach(cb => {
+        if (cb.checked) {
+          const idxMatch = cb.name.match(/\[(\d+)\]/);
+          if (!idxMatch) return;
+          const idx = parseInt(idxMatch[1]);
+          const pizzaId = idx + 1;
 
-            const optionsDiv = document.getElementById(`options-${idx}`);
-            const sizeSelect = optionsDiv.querySelector('.size-select');
-            const sizeId = sizeSelect.value; // ya es el id del tamaño (string "1" o "2")
-            const qtyInput = optionsDiv.querySelector('.quantity-input');
-            const quantity = parseInt(qtyInput.value) || 1;
+          const optionsDiv = document.getElementById(`options-${idx}`);
+          const sizeSelect = optionsDiv.querySelector('.size-select');
+          const sizeId = sizeSelect.value;
+          const qtyInput = optionsDiv.querySelector('.quantity-input');
+          const quantity = parseInt(qtyInput.value) || 1;
 
-            // Obtener nombre de la pizza del arreglo que pasó el servidor
-            const pizzaName = pizzaNames[idx];
+          const pizzaName = pizzaNames[idx];
 
-            // Obtener precio base desde el objeto prices que envía el servidor
-            let basePrice = 0;
-            if (pizzaPrices[pizzaId] && pizzaPrices[pizzaId][sizeId]) {
-                basePrice = pizzaPrices[pizzaId][sizeId];
+          let basePrice = 0;
+          if (pizzaPrices[pizzaId] && pizzaPrices[pizzaId][sizeId]) {
+            basePrice = pizzaPrices[pizzaId][sizeId];
+          }
+
+          const toppingChecks = optionsDiv.querySelectorAll('.topping-check:checked');
+          let extrasCost = 0;
+          const selectedToppings = [];
+          toppingChecks.forEach(tc => {
+            const toppingId = parseInt(tc.value);
+            const topping = toppingsList.find(t => t.id === toppingId);
+            if (topping) {
+              extrasCost += topping.extra_price;
+              selectedToppings.push(topping.name);
             }
+          });
 
-            // Calcular costo de ingredientes extra seleccionados
-            const toppingChecks = optionsDiv.querySelectorAll('.topping-check:checked');
-            let extrasCost = 0;
-            const selectedToppings = [];
-            toppingChecks.forEach(tc => {
-                const toppingId = parseInt(tc.value);
-                const topping = toppingsList.find(t => t.id === toppingId);
-                if (topping) {
-                extrasCost += topping.extra_price;
-                selectedToppings.push(topping.name);
-                }
-            });
+          const lineTotal = (basePrice + extrasCost) * quantity;
+          total += lineTotal;
 
-            const lineTotal = (basePrice + extrasCost) * quantity;
+          const li = document.createElement('li');
+          let text = `${quantity}x ${pizzaName} (${sizeSelect.options[sizeSelect.selectedIndex].text})`;
+          if (selectedToppings.length) {
+            text += ` + ${selectedToppings.join(', ')}`;
+          }
+          text += ` = $${lineTotal.toFixed(2)}`;
+          li.textContent = text;
+          summaryList.appendChild(li);
+        }
+      });
+
+      document.querySelectorAll('.bebida-qty').forEach(input => {
+        const qty = parseInt(input.value) || 0;
+        if (qty > 0) {
+          const bebidaId = input.name.match(/\[(\d+)\]/)[1];
+          const bebida = bebidasList.find(b => b.id == bebidaId);
+          if (bebida) {
+            const lineTotal = bebida.price * qty;
             total += lineTotal;
 
-            // Crear línea en el resumen
             const li = document.createElement('li');
-            let text = `${quantity}x ${pizzaName} (${sizeSelect.options[sizeSelect.selectedIndex].text})`;
-            if (selectedToppings.length) {
-                text += ` + ${selectedToppings.join(', ')}`;
-            }
-            text += ` = $${lineTotal.toFixed(2)}`;
-            li.textContent = text;
+            li.textContent = `${qty}x ${bebida.name} = $${lineTotal.toFixed(2)}`;
             summaryList.appendChild(li);
-            }
-        });
-        
-        // Calcular bebidas
-        document.querySelectorAll('.bebida-qty').forEach(input => {
-            const qty = parseInt(input.value) || 0;
-            if (qty > 0) {
-                const bebidaId = input.name.match(/\[(\d+)\]/)[1];
-                const bebida = bebidasList.find(b => b.id == bebidaId);
-                if (bebida) {
-                    const lineTotal = bebida.price * qty;
-                    total += lineTotal;
-                    
-                    const li = document.createElement('li');
-                    li.textContent = `${qty}x ${bebida.name} = $${lineTotal.toFixed(2)}`;
-                    summaryList.appendChild(li);
-                }
-            }
-        });
-
-        totalSpan.textContent = total.toFixed(2);
-        orderSummary.classList.toggle('hidden', total === 0);
+          }
         }
+      });
+
+      totalSpan.textContent = total.toFixed(2);
+      orderSummary.classList.toggle('hidden', total === 0);
+    }
 
     checkboxes.forEach(cb => {
       cb.addEventListener('change', function() {
@@ -279,32 +325,19 @@
           optionsDiv.querySelectorAll('.topping-check').forEach(t => t.checked = false);
           optionsDiv.querySelector('.quantity-input').value = 1;
         }
-        
         updateSummary();
-
-        // Animación pop
         this.classList.add('animate-pop');
-        setTimeout(() => {
-          this.classList.remove('animate-pop');
-        }, 300);
-
-        // Eliminar hover residual
+        setTimeout(() => this.classList.remove('animate-pop'), 300);
         this.classList.add('no-hover');
-        setTimeout(() => {
-          this.classList.remove('no-hover');
-        }, 150);
+        setTimeout(() => this.classList.remove('no-hover'), 150);
       });
     });
 
-    document.querySelectorAll('.size-select, .quantity-input, .topping-check').forEach(el => {
+    document.querySelectorAll('.size-select, .quantity-input, .topping-check, .bebida-qty').forEach(el => {
       el.addEventListener('change', updateSummary);
     });
 
-    document.querySelectorAll('.bebida-qty').forEach(el => {
-      el.addEventListener('change', updateSummary);
-    });
-
-    // Validación de códigos de área venezolanos (móviles)
+    // Validación de teléfono
     const validAreaCodes = ['0412', '0414', '0416', '0422', '0424', '0426'];
     const phoneInput = document.getElementById('phoneInput');
     const phoneError = document.getElementById('phoneError');
@@ -332,25 +365,20 @@
       }
     }
 
-    // 🔥 Manejo inteligente de Backspace: borra el código de área sin eliminar el guion
     phoneInput.addEventListener('keydown', function(e) {
       if (e.key === 'Backspace') {
         const value = this.value;
         const cursorPos = this.selectionStart;
-        // Si hay un guion en la posición 4 y el cursor está justo después de él (posición 5)
         if (value.charAt(4) === '-' && cursorPos === 5) {
           e.preventDefault();
-          // Eliminar el último dígito del código de área (posición 3) y mantener el guion
           const newValue = value.substring(0, 3) + value.substring(4);
           this.value = newValue;
-          this.setSelectionRange(3, 3); // colocar cursor justo antes del guion
-          // Disparar evento input para que se actualice el formateo y la validación
+          this.setSelectionRange(3, 3);
           this.dispatchEvent(new Event('input'));
         }
       }
     });
 
-    // Formateo automático + validación en input
     phoneInput.addEventListener('input', function(e) {
       let value = this.value.replace(/\D/g, '');
       if (value.length >= 4) {
@@ -369,7 +397,6 @@
       updatePhoneUI();
     });
 
-    // Validación antes de enviar el formulario
     document.getElementById('orderForm').addEventListener('submit', function(e) {
       if (!validateAreaCode(phoneInput.value)) {
         e.preventDefault();
@@ -379,64 +406,61 @@
       }
     });
 
-    updatePhoneUI();
-  </script>
+    // Validación de hora
+    const pickupTimeInput = document.getElementById('pickupTime');
+    const timeError = document.getElementById('timeError');
 
-    <script>
-        const pickupTimeInput = document.getElementById('pickupTime');
-        const timeError = document.getElementById('timeError');
-
-        function validatePickupTime() {
-            const value = pickupTimeInput.value;
-            if (!value) {
-            timeError.classList.add('hidden');
-            pickupTimeInput.classList.remove('border-red-500');
-            return true;
-            }
-
-            const [hours, minutes] = value.split(':').map(Number);
-            const totalMinutes = hours * 60 + minutes;
-
-            if (totalMinutes < 17 * 60 || totalMinutes > 23 * 60 + 59) {
-            timeError.classList.remove('hidden');
-            pickupTimeInput.classList.add('border-red-500');
-            return false;
-            } else {
-            timeError.classList.add('hidden');
-            pickupTimeInput.classList.remove('border-red-500');
-            return true;
-            }
-        }
-
-        pickupTimeInput.addEventListener('input', validatePickupTime);
-        pickupTimeInput.addEventListener('change', validatePickupTime);
-
-        // También validar al enviar el formulario (por si acaso)
-        document.getElementById('orderForm').addEventListener('submit', function(e) {
-            if (!validatePickupTime()) {
-            e.preventDefault();
-            pickupTimeInput.focus();
-            }
-        });
-    </script>
-
-    <script>
-      const paymentMethodSelect = document.getElementById('paymentMethod');
-      const submitBtn = document.getElementById('submitOrderBtn');
-
-      function updateButtonText() {
-        const method = paymentMethodSelect.value;
-        if (method === 'Efectivo en local') {
-          submitBtn.textContent = 'Enviar pedido 🍕';
-        } else {
-          submitBtn.textContent = 'Realizar pago 💳';
-        }
+    function validatePickupTime() {
+      const value = pickupTimeInput.value;
+      if (!value) {
+        timeError.classList.add('hidden');
+        pickupTimeInput.classList.remove('border-red-500');
+        return true;
       }
 
-      paymentMethodSelect.addEventListener('change', updateButtonText);
-      // Llamar al cargar por si ya hay un método seleccionado
-      updateButtonText();
-    </script>
+      const [hours, minutes] = value.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes;
+
+      if (totalMinutes < 17 * 60 || totalMinutes > 23 * 60 + 59) {
+        timeError.classList.remove('hidden');
+        pickupTimeInput.classList.add('border-red-500');
+        return false;
+      } else {
+        timeError.classList.add('hidden');
+        pickupTimeInput.classList.remove('border-red-500');
+        return true;
+      }
+    }
+
+    pickupTimeInput.addEventListener('input', validatePickupTime);
+    pickupTimeInput.addEventListener('change', validatePickupTime);
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+      if (!validatePickupTime()) {
+        e.preventDefault();
+        pickupTimeInput.focus();
+      }
+    });
+
+    // Botón dinámico de pago
+    const paymentMethodSelect = document.getElementById('paymentMethod');
+    const submitBtn = document.getElementById('submitOrderBtn');
+
+    function updateButtonText() {
+      const method = paymentMethodSelect.value;
+      if (method === 'Efectivo en local') {
+        submitBtn.textContent = 'Enviar pedido 🍕';
+      } else {
+        submitBtn.textContent = 'Realizar pago 💳';
+      }
+    }
+
+    paymentMethodSelect.addEventListener('change', updateButtonText);
+    updateButtonText();
+
+    updatePhoneUI();
+    updateSummary();
+  </script>
 
 </body>
 </html>
