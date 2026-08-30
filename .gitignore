@@ -1,4 +1,15 @@
+# Dependencias de Node
 node_modules/
-pizzeria.db
+
+# Variables de entorno (contienen secretos/credenciales)
 .env
-uploads/
+
+# Archivos de base de datos SQLite (legado; ya se usa PostgreSQL)
+pizzeria.db
+*.db
+
+# Imágenes de comprobantes de pago subidas por los usuarios
+public/uploads/
+
+# Entorno virtual de Python (no relacionado con la app)
+venv/

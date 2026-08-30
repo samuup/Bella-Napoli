@@ -1,3 +1,10 @@
+<!-- ============================================================
+  VIEW: payment.ejs — Pantalla de pago / subir comprobante
+  ------------------------------------------------------------
+  Permite ingresar el número de referencia O subir una imagen
+  de comprobante. El pedido solo se crea en la BD al confirmar
+  esta pantalla. Variables: order, error, paymentData.
+============================================================ -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,7 +25,7 @@
         <div class="text-center mb-6">
           <span class="text-5xl">💳</span>
           <h1 class="text-3xl font-bold font-serif text-stone-800">Finalizar pago</h1>
-          <p class="text-stone-500">Pedido #<%= order.id %> - Total $<%= order.total %></p>
+          <p class="text-stone-500">Total $<%= order.total %></p>
         </div>
 
         <% if (error) { %>
@@ -39,7 +46,7 @@
             <% } %>
         </div>
 
-        <form action="/payment/<%= order.id %>" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="/payment" method="POST" enctype="multipart/form-data" class="space-y-4">
           <%- include('csrf') %>
           <label class="block">
             <span class="text-stone-700 font-medium">Número de referencia</span>

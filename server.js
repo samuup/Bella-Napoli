@@ -1,22 +1,56 @@
+// ======================================================
+// server.js — PUNTO DE ENTRADA PRINCIPAL DEL PROYECTO
+// ------------------------------------------------------
+// Aplicación web "Bella Napoli" (pedidos de pizza) con:
+//   - Framework: Express
+//   - Vistas: EJS (TailwindCSS por CDN)
+//   - Base de datos: PostgreSQL (pg + connect-pg-simple)
+//   - Sesiones: express-session (store persistente en PG)
+//   - Tiempo real: Socket.IO (notificaciones y pedidos)
+//   - Protección CSRF: csurf
+//
+// Orden del archivo:
+//   1. Imports y configuración (app, multer, paymentInfo, socket)
+//   2. Middlewares globales (sesión, CSRF, flash, locales)
+//   3. Helpers de autenticación (isAuthenticated, isAdmin)
+//   4. Rutas de autenticación (registro, login, logout, passwords)
+//   5. Menú principal y procesamiento del pedido
+//   6. Rutas de administración (dashboard, Pizzas, Tamaños, Toppings, Bebidas, Pedidos)
+//   7. Rutas de pedidos y detalle
+//   8. Notificaciones
+//   9. Pagos (crear pedido tras subir comprobante/referencia)
+//   10. Confirmación de pedido
+//   11. Arranque del servidor
+// ======================================================
+
+// Cargar variables de entorno desde .env
 require('dotenv').config();
 
+// --- Dependencias de terceros ---
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session); // Store de sesión en PostgreSQL
 const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const csrf = require('csurf');
 const flash = require('connect-flash');
-const db = require('./database');
 const http = require('http');
 const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 
+// --- Módulo local: pool de conexiones a la base de datos ---
+const db = require('./database');
+
+// Instancia principal de la aplicación Express
 const app = express();
 
-// Configurar multer para guardar imágenes de comprobantes
+// ======================================================
+// CONFIGURACIÓN DE SUBIDA DE ARCHIVOS (multer)
+// Guarda las imágenes de comprobante de pago en public/uploads/
+// ======================================================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'public/uploads/');
@@ -42,6 +76,11 @@ const upload = multer({
   }
 });
 
+// ======================================================
+// INFORMACIÓN DE PAGOS POR MÉTODO
+// Muestra las instrucciones que el cliente ve en la
+// pantalla de pago según el método seleccionado.
+// ======================================================
 const paymentInfo = {
   'Pago móvil': {
     title: 'Pago móvil',
@@ -80,6 +119,13 @@ const paymentInfo = {
   }
 };
 
+// ======================================================
+// SERVIDOR y SOCKET.IO
+// Se crea el servidor HTTP para poder usar Socket.IO.
+// Socket.IO permite enviar notificaciones en tiempo real
+// al usuario conectado (habitación `user_<id>`) y al panel
+// del administrador (eventos 'nuevo_pedido' / 'pago_realizado').
+// ======================================================
 const fs = require('fs');
 if (!fs.existsSync('public/uploads')) {
   fs.mkdirSync('public/uploads', { recursive: true });
@@ -101,9 +147,14 @@ const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 
+// ======================================================
+// MIDDLEWARES GLOBALES
+// ======================================================
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Protección CSRF: se omite en peticiones multipart (subida de
+// archivos), donde la validación se hace explícitamente en la ruta.
 const csrfProtection = csrf({ cookie: true });
 
 app.use((req, res, next) => {
@@ -116,18 +167,30 @@ app.use((req, res, next) => {
 app.use(flash());
 app.use(express.static('public'));
 
+// Sesiones persistidas en PostgreSQL (sobreviven reinicios del servidor).
 app.use(session({
+  store: new pgSession({
+    pool: db,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 }
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24,
+    httpOnly: true,
+    sameSite: 'lax'
+  }
 }));
 
+// Variable disponible en todas las vistas: usuario logueado (o null).
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   next();
 });
 
+// Conteo de pedidos pendientes (para la campanita/sidebar del admin).
 app.use((req, res, next) => {
   if (req.session.user && req.session.user.role === 'admin') {
     db.query("SELECT COUNT(*) as count FROM orders WHERE status = 'pending'")
@@ -146,6 +209,7 @@ app.use((req, res, next) => {
   }
 });
 
+// Token CSRF disponible en todas las vistas (campo oculto _csrf).
 app.use((req, res, next) => {
   if (typeof req.csrfToken === 'function') {
     res.locals.csrfToken = req.csrfToken();
@@ -153,6 +217,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Mensajes flash (éxito / error) disponibles en las vistas.
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
   res.locals.error_msg = req.flash('error_msg');
@@ -160,6 +225,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// ======================================================
+// HELPERS DE AUTENTICACIÓN / AUTORIZACIÓN
+// ======================================================
+// Requiere que el usuario esté logueado (redirige a /login).
 function isAuthenticated(req, res, next) {
   if (req.session.user) {
     return next();
@@ -286,6 +355,7 @@ app.get('/logout', (req, res) => {
   });
 });
 
+// ============ RECUPERACIÓN DE CONTRASEÑA ============
 app.get('/forgot-password', (req, res) => {
   res.render('forgot-password', { error: null, success: false });
 });
@@ -488,25 +558,9 @@ app.post('/order', isAuthenticated, async (req, res) => {
   }
 
   const customerName = req.session.user.name;
-  const insertOrder = await db.query(
-    `INSERT INTO orders (user_id, customer_name, phone, pickup_time, payment_method, total, status)
-     VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING id`,
-    [user_id, customerName, phone, pickup_time, payment_method, total.toFixed(2)]
-  );
-  const orderId = insertOrder.rows[0].id;
 
   const details = [];
   for (const item of orderItems) {
-    const insertItem = await db.query(
-      'INSERT INTO order_items (order_id, pizza_id, size_id, quantity, line_total) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [orderId, item.pizza_id, item.size_id, item.quantity, item.lineTotal]
-    );
-    const orderItemId = insertItem.rows[0].id;
-
-    for (const t_id of item.topping_ids) {
-      await db.query('INSERT INTO order_item_toppings (order_item_id, topping_id) VALUES ($1, $2)', [orderItemId, t_id]);
-    }
-
     const pizza = (await db.query('SELECT name FROM pizzas WHERE id = $1', [item.pizza_id])).rows[0];
     const size = (await db.query('SELECT label FROM sizes WHERE id = $1', [item.size_id])).rows[0];
     const toppingNames = [];
@@ -514,7 +568,6 @@ app.post('/order', isAuthenticated, async (req, res) => {
       const topping = (await db.query('SELECT name FROM toppings WHERE id = $1', [t_id])).rows[0];
       if (topping) toppingNames.push(topping.name);
     }
-
     details.push({
       pizzaName: pizza.name,
       sizeLabel: size.label,
@@ -524,21 +577,38 @@ app.post('/order', isAuthenticated, async (req, res) => {
     });
   }
 
-  const bebidaDetails = [];
-  for (const b of orderBebidas) {
-    await db.query('INSERT INTO order_bebidas (order_id, bebida_id, quantity, line_total) VALUES ($1, $2, $3, $4)',
-      [orderId, b.bebida_id, b.quantity, b.lineTotal]);
-    bebidaDetails.push({
-      name: b.name,
-      quantity: b.quantity,
-      lineTotal: b.lineTotal
-    });
-  }
-
-  io.emit('nuevo_pedido', { id: orderId, customer_name: customerName, total: total.toFixed(2), status: 'pending', created_at: new Date().toISOString() });
+  const bebidaDetails = orderBebidas.map(b => ({
+    name: b.name,
+    quantity: b.quantity,
+    lineTotal: b.lineTotal
+  }));
 
   if (payment_method === 'Efectivo en local') {
-    res.render('order-confirmation', {
+    const insertOrder = await db.query(
+      `INSERT INTO orders (user_id, customer_name, phone, pickup_time, payment_method, total, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING id`,
+      [user_id, customerName, phone, pickup_time, payment_method, total.toFixed(2)]
+    );
+    const orderId = insertOrder.rows[0].id;
+
+    for (const item of orderItems) {
+      const insertItem = await db.query(
+        'INSERT INTO order_items (order_id, pizza_id, size_id, quantity, line_total) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [orderId, item.pizza_id, item.size_id, item.quantity, item.lineTotal]
+      );
+      const orderItemId = insertItem.rows[0].id;
+      for (const t_id of item.topping_ids) {
+        await db.query('INSERT INTO order_item_toppings (order_item_id, topping_id) VALUES ($1, $2)', [orderItemId, t_id]);
+      }
+    }
+    for (const b of orderBebidas) {
+      await db.query('INSERT INTO order_bebidas (order_id, bebida_id, quantity, line_total) VALUES ($1, $2, $3, $4)',
+        [orderId, b.bebida_id, b.quantity, b.lineTotal]);
+    }
+
+    io.emit('nuevo_pedido', { id: orderId, customer_name: customerName, total: total.toFixed(2), status: 'pending', created_at: new Date().toISOString() });
+
+    return res.render('order-confirmation', {
       customerName,
       pickup_time,
       payment_method,
@@ -546,12 +616,27 @@ app.post('/order', isAuthenticated, async (req, res) => {
       bebidas: bebidaDetails,
       total: total.toFixed(2)
     });
-  } else {
-    res.redirect(`/payment/${orderId}`);
   }
+
+  // Métodos de pago con comprobante/referencia: NO se crea el pedido en la BD
+  // hasta que el usuario proporcione el número de referencia o suba el comprobante.
+  req.session.pendingOrder = {
+    user_id,
+    customerName,
+    phone,
+    pickup_time,
+    payment_method,
+    total: total.toFixed(2),
+    orderItems,
+    orderBebidas,
+    details,
+    bebidaDetails
+  };
+  res.redirect('/payment');
 });
 
 // ==================== RUTAS ADMIN ====================
+// Middleware que bloquea el acceso a usuarios que no son admin.
 function isAdmin(req, res, next) {
   if (req.session.user && req.session.user.role === 'admin') {
     return next();
@@ -559,6 +644,7 @@ function isAdmin(req, res, next) {
   res.status(403).send('Acceso denegado. Solo administradores.');
 }
 
+// --- Dashboard del administrador ---
 app.get('/admin', isAdmin, async (req, res) => {
   const totalRevenue = (await db.query('SELECT COALESCE(SUM(total), 0) as total FROM orders')).rows[0].total;
   const totalOrders = (await db.query('SELECT COUNT(*) as count FROM orders')).rows[0].count;
@@ -948,6 +1034,9 @@ app.get('/admin/orders', isAdmin, async (req, res) => {
   res.render('admin-orders', { orders, nombre, telefono, fecha });
 });
 
+// ==================== PEDIDOS DEL CLIENTE ====================
+
+// Página "Arma tu pedido" (formulario multi-paso del cliente).
 app.get('/order', isAuthenticated, async (req, res) => {
   const pizzas = (await db.query('SELECT * FROM pizzas WHERE active = 1')).rows;
   const sizes = (await db.query('SELECT * FROM sizes')).rows;
@@ -964,6 +1053,7 @@ app.get('/order', isAuthenticated, async (req, res) => {
   res.render('order', { pizzas, sizes, toppings, prices, bebidas });
 });
 
+// Detalle de un pedido del cliente logueado (solo el suyo).
 app.get('/order-detail/:id', isAuthenticated, async (req, res) => {
   const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
@@ -995,6 +1085,8 @@ app.get('/order-detail/:id', isAuthenticated, async (req, res) => {
   res.render('order-detail', { order, items, bebidas });
 });
 
+// ==================== NOTIFICACIONES ====================
+// Endpoints usados por la campanita de notificaciones del cliente.
 app.post('/notification/:id/read', isAuthenticated, async (req, res) => {
   await db.query('UPDATE notifications SET is_read = 1 WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id]);
   res.json({ success: true });
@@ -1092,17 +1184,24 @@ app.post('/admin/orders/delete-all', isAdmin, async (req, res) => {
 });
 
 // --- Pagos ---
-app.get('/payment/:id', isAuthenticated, async (req, res) => {
-  const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
-  if (!order) return res.status(404).send('Pedido no encontrado');
-  res.render('payment', { order, error: null, paymentData: paymentInfo[order.payment_method] || null });
+app.get('/payment', isAuthenticated, (req, res) => {
+  const pending = req.session.pendingOrder;
+  if (!pending) {
+    return res.status(404).send('No hay un pedido pendiente de pago.');
+  }
+  const order = {
+    id: null,
+    total: pending.total,
+    payment_method: pending.payment_method
+  };
+  res.render('payment', { order, error: null, paymentData: paymentInfo[pending.payment_method] || null });
 });
 
-app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtection, async (req, res) => {
-  res.locals.csrfToken = req.csrfToken();
-
-  const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
-  if (!order) return res.status(404).send('Pedido no encontrado');
+app.post('/payment', isAuthenticated, upload.single('receipt'), csrfProtection, async (req, res) => {
+  const pending = req.session.pendingOrder;
+  if (!pending) {
+    return res.status(404).send('No hay un pedido pendiente de pago.');
+  }
 
   const { payment_ref } = req.body;
   let payment_receipt = null;
@@ -1110,24 +1209,56 @@ app.post('/payment/:id', isAuthenticated, upload.single('receipt'), csrfProtecti
     payment_receipt = '/uploads/' + req.file.filename;
   }
 
-  const paymentData = paymentInfo[order.payment_method] || null;
+  const paymentData = paymentInfo[pending.payment_method] || null;
+  const orderView = {
+    id: null,
+    total: pending.total,
+    payment_method: pending.payment_method
+  };
 
   if (!payment_ref && !payment_receipt) {
-    return res.render('payment', { order, error: 'Debes ingresar número de referencia o subir comprobante', paymentData });
+    return res.render('payment', { order: orderView, error: 'Debes ingresar número de referencia o subir comprobante', paymentData });
   }
 
   if (payment_ref && !/^\d{6}$/.test(payment_ref)) {
-    return res.render('payment', { order, error: 'La referencia debe contener exactamente 6 dígitos.', paymentData });
+    return res.render('payment', { order: orderView, error: 'La referencia debe contener exactamente 6 dígitos.', paymentData });
   }
 
-  await db.query('UPDATE orders SET payment_status = $1, payment_ref = $2, payment_receipt = $3 WHERE id = $4',
-    ['submitted', payment_ref || null, payment_receipt, order.id]);
+  // El pedido solo se crea en la BD cuando el usuario proporciona
+  // el número de referencia o sube el comprobante.
+  const insertOrder = await db.query(
+    `INSERT INTO orders (user_id, customer_name, phone, pickup_time, payment_method, payment_status, payment_ref, payment_receipt, total, status)
+     VALUES ($1, $2, $3, $4, $5, 'submitted', $6, $7, $8, 'pending') RETURNING id`,
+    [pending.user_id, pending.customerName, pending.phone, pending.pickup_time, pending.payment_method,
+     payment_ref || null, payment_receipt, pending.total]
+  );
+  const orderId = insertOrder.rows[0].id;
 
-  io.emit('pago_realizado', { id: order.id, customer_name: order.customer_name, total: order.total });
+  for (const item of pending.orderItems) {
+    const insertItem = await db.query(
+      'INSERT INTO order_items (order_id, pizza_id, size_id, quantity, line_total) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [orderId, item.pizza_id, item.size_id, item.quantity, item.lineTotal]
+    );
+    const orderItemId = insertItem.rows[0].id;
+    for (const t_id of item.topping_ids) {
+      await db.query('INSERT INTO order_item_toppings (order_item_id, topping_id) VALUES ($1, $2)', [orderItemId, t_id]);
+    }
+  }
+  for (const b of pending.orderBebidas) {
+    await db.query('INSERT INTO order_bebidas (order_id, bebida_id, quantity, line_total) VALUES ($1, $2, $3, $4)',
+      [orderId, b.bebida_id, b.quantity, b.lineTotal]);
+  }
 
-  res.redirect(`/order-confirmation/${order.id}`);
+  delete req.session.pendingOrder;
+
+  io.emit('pago_realizado', { id: orderId, customer_name: pending.customerName, total: pending.total });
+  io.emit('nuevo_pedido', { id: orderId, customer_name: pending.customerName, total: pending.total, status: 'pending', created_at: new Date().toISOString() });
+
+  res.redirect(`/order-confirmation/${orderId}`);
 });
 
+// ==================== CONFIRMACIÓN DE PEDIDO ====================
+// Muestra el resumen del pedido completado (cliente).
 app.get('/order-confirmation/:id', isAuthenticated, async (req, res) => {
   const order = (await db.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [req.params.id, req.session.user.id])).rows[0];
   if (!order) return res.status(404).send('Pedido no encontrado');
@@ -1179,6 +1310,8 @@ app.get('/order-confirmation/:id', isAuthenticated, async (req, res) => {
   });
 });
 
+// El administrador confirma o rechaza el pago de un pedido
+// (botones "Confirmar pago" / "Rechazar pago" en admin-orders).
 app.post('/admin/orders/:id/payment', isAdmin, async (req, res) => {
   const { payment_status } = req.body;
 

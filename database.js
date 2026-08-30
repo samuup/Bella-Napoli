@@ -1,8 +1,31 @@
-// database.js
 // ======================================================
+// database.js
+// ------------------------------------------------------
 // MÓDULO DE BASE DE DATOS POSTGRESQL
 // Reemplaza la versión anterior que usaba SQLite.
-// Ahora utilizamos 'pg' (node-postgres) y Supabase.
+// Ahora utilizamos 'pg' (node-postgres) con Supabase.
+//
+// Estructura del archivo:
+//   1. Creación del Pool de conexiones
+//   2. initDb(): crea las tablas si no existen
+//   3. seedData(): inserta datos de ejemplo si están vacías
+//   4. setup(): inicializa BD y siembra datos
+//   5. Exportación del Pool
+//
+// TABLAS:
+//   users               - Usuarios (customer / admin)
+//   pizzas              - Pizzas del menú
+//   sizes               - Tamaños (Mediana, Grande...)
+//   pizza_prices        - Precio por pizza + tamaño
+//   toppings            - Ingredientes extra
+//   orders              - Pedidos
+//   order_items         - Líneas de cada pedido (pizzas)
+//   order_item_toppings - Ingredientes de cada línea de pizza
+//   bebidas             - Bebidas / acompañantes
+//   order_bebidas       - Bebidas de cada pedido
+//   password_resets     - Tokens para resetear contraseña
+//   notifications       - Notificaciones por usuario
+//   session             - Sesiones persistidas (creada por connect-pg-simple)
 // ======================================================
 
 // Importamos Pool desde 'pg' para manejar conexiones.

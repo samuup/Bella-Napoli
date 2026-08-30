@@ -1,3 +1,11 @@
+<!-- ============================================================
+  VIEW: order.ejs — Formulario "Arma tu pedido" (multi-paso)
+  ------------------------------------------------------------
+  4 pasos: 1) Pizzas (tamaño, cantidad y toppings) con steppers
+  táctiles +/−, 2) ¿Desea bebidas?, 3) Bebidas, 4) Datos de
+  contacto y método de pago. Incluye resumen/total en vivo.
+  Variables: pizzas, sizes, toppings, prices, bebidas.
+============================================================ -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -86,10 +94,18 @@
                 </label>
                 <label class="block">
                   <span class="text-sm font-medium text-stone-600">Cantidad</span>
-                  <input type="number" name="pizzas[<%= idx %>][quantity]" 
-                         min="1" max="30" value="1" 
-                         onkeydown="return false;" 
-                         class="border rounded p-1 w-16 ml-2 quantity-input">
+                  <div class="flex items-center mt-1 gap-1">
+                    <button type="button" data-step-down="pizza-qty-<%= idx %>"
+                            class="stepper-btn w-9 h-9 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                            aria-label="Disminuir">−</button>
+                    <input type="number" name="pizzas[<%= idx %>][quantity]" id="pizza-qty-<%= idx %>"
+                           min="1" max="30" value="1" step="1"
+                           onkeydown="return false;"
+                           class="quantity-input w-14 text-center border rounded-lg py-2 mx-1 bg-white">
+                    <button type="button" data-step-up="pizza-qty-<%= idx %>"
+                            class="stepper-btn w-9 h-9 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                            aria-label="Aumentar">+</button>
+                  </div>
                 </label>
               </div>
               <div class="mt-4">
@@ -136,9 +152,17 @@
             </div>
             <div class="flex items-center space-x-2">
               <label class="text-sm font-medium text-stone-600">Cantidad</label>
-              <input type="number" name="bebidas[<%= bebida.id %>]" min="0" max="30" value="0" 
-                     onkeydown="return false;" 
-                     class="bebida-qty border rounded p-1 w-16 quantity-input">
+              <div class="flex items-center gap-1">
+                <button type="button" data-step-down="bebida-qty-<%= bebida.id %>"
+                        class="stepper-btn w-8 h-8 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                        aria-label="Disminuir">−</button>
+                <input type="number" name="bebidas[<%= bebida.id %>]" id="bebida-qty-<%= bebida.id %>" min="0" max="30" value="0" step="1"
+                       onkeydown="return false;"
+                       class="bebida-qty w-12 text-center border rounded-lg py-1.5 mx-1 quantity-input">
+                <button type="button" data-step-up="bebida-qty-<%= bebida.id %>"
+                        class="stepper-btn w-8 h-8 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                        aria-label="Aumentar">+</button>
+              </div>
             </div>
           </div>
         <% }) %>
@@ -335,6 +359,28 @@
 
     document.querySelectorAll('.size-select, .quantity-input, .topping-check, .bebida-qty').forEach(el => {
       el.addEventListener('change', updateSummary);
+    });
+
+    // Steppers de cantidad (funcionan también en dispositivos móviles)
+    function stepQty(id, delta) {
+      const input = document.getElementById(id);
+      if (!input) return;
+      const min = parseInt(input.min || 0);
+      const max = input.max ? parseInt(input.max) : Infinity;
+      const current = parseInt(input.value) || 0;
+      const next = Math.min(Math.max(current + delta, min), max);
+      input.value = next;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    document.querySelectorAll('.stepper-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = btn.dataset.stepUp ? btn.dataset.stepUp : btn.dataset.stepDown;
+        const delta = btn.dataset.stepUp ? 1 : -1;
+        stepQty(target, delta);
+        return false;
+      });
     });
 
     // Validación de teléfono
