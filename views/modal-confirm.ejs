@@ -3,15 +3,15 @@
   Usado en las vistas de administración para confirmar
   eliminaciones. Expone la función openConfirmModal(msg, action).
 ============================================================ -->
-<div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
-  <div class="bg-[#f5efe6] rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
-    <h3 class="text-xl font-bold font-serif text-stone-800 mb-2">¿Estás seguro?</h3>
-    <p id="confirmMessage" class="text-stone-600 mb-6">Esta acción no se puede deshacer.</p>
+<div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70">
+  <div class="bg-surface-container-high border border-outline-variant rounded-none shadow-2xl p-6 max-w-sm w-full mx-4">
+    <h3 class="text-xl font-bold font-display text-on-surface mb-2">¿Estás seguro?</h3>
+    <p id="confirmMessage" class="text-on-surface-variant mb-6">Esta acción no se puede deshacer.</p>
     <div class="flex justify-end space-x-3">
-      <button id="cancelBtn" class="px-4 py-2 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-700 transition">Cancelar</button>
+      <button id="cancelBtn" class="px-4 py-2 rounded-none bg-surface-container-highest hover:bg-outline-variant text-on-surface transition">Cancelar</button>
       <form id="confirmForm" method="POST" class="inline">
         <%- include('csrf') %>
-        <button type="submit" class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white transition">Eliminar</button>
+        <button type="submit" class="px-4 py-2 rounded-none bg-brand-red hover:bg-red-700 text-white transition">Eliminar</button>
       </form>
     </div>
   </div>

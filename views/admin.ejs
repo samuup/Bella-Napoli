@@ -12,64 +12,57 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard - Bella Napoli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
-  </style>
+  <%- include('partials/head', { title: 'Dashboard - Bella Napoli' }) %>
 </head>
-<body class="bg-[#e8dccc] flex">
+<body class="bg-background text-on-surface flex">
   <%- include('admin-sidebar') %>
   <div class="ml-64 p-8 flex-1">
-    <h1 class="text-4xl font-bold font-serif text-stone-800 mb-8">Dashboard</h1>
+    <h1 class="text-4xl font-bold font-display text-on-surface mb-8">Dashboard</h1>
 
     <% if (success_msg && success_msg.length > 0) { %>
-      <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-2xl mb-6"><%= success_msg[0] %></div>
+      <div class="bg-brand-green/10 border border-brand-green/40 text-green-300 px-4 py-3 rounded-none mb-6"><%= success_msg[0] %></div>
     <% } %>
     
     <% if (error_msg && error_msg.length > 0) { %>
-      <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-2xl mb-6"><%= error_msg[0] %></div>
+      <div class="bg-brand-red/10 border border-brand-red/40 text-red-300 px-4 py-3 rounded-none mb-6"><%= error_msg[0] %></div>
     <% } %>
 
     <!-- Tarjetas principales -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
-          <p class="text-sm text-stone-500 mb-1">Ingresos totales</p>
-          <p class="text-3xl font-bold text-green-700">$<%= totalRevenue.toFixed(2) %></p>
+          <p class="text-sm text-on-surface-variant mb-1">Ingresos totales</p>
+          <p class="text-3xl font-bold text-brand-green">$<%= totalRevenue.toFixed(2) %></p>
         </div>
         <span class="text-4xl">💰</span>
       </div>
-      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
-          <p class="text-sm text-stone-500 mb-1">Pedidos hoy</p>
-          <p class="text-3xl font-bold text-stone-800"><%= ordersToday %></p>
-          <p class="text-xs text-stone-400">Ayer: <%= ordersYesterday %></p>
+          <p class="text-sm text-on-surface-variant mb-1">Pedidos hoy</p>
+          <p class="text-3xl font-bold text-on-surface"><%= ordersToday %></p>
+          <p class="text-xs text-on-surface-variant/70">Ayer: <%= ordersYesterday %></p>
         </div>
         <span class="text-4xl">📦</span>
       </div>
-      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
-          <p class="text-sm text-stone-500 mb-1">Pizzas activas</p>
-          <p class="text-3xl font-bold text-stone-800"><%= activePizzas %></p>
+          <p class="text-sm text-on-surface-variant mb-1">Pizzas activas</p>
+          <p class="text-3xl font-bold text-on-surface"><%= activePizzas %></p>
         </div>
         <span class="text-4xl">🍕</span>
       </div>
-      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
+      <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6 flex items-center justify-between hover:shadow-xl transition">
         <div>
-          <p class="text-sm text-stone-500 mb-1">Ingredientes extra</p>
-          <p class="text-3xl font-bold text-stone-800"><%= totalToppings %></p>
+          <p class="text-sm text-on-surface-variant mb-1">Ingredientes extra</p>
+          <p class="text-3xl font-bold text-on-surface"><%= totalToppings %></p>
         </div>
         <span class="text-4xl">🧀</span>
       </div>
     </div>
 
     <!-- Estados de pedidos (barras) -->
-    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-10">
-      <h2 class="text-2xl font-bold font-serif text-stone-800 mb-4">Pedidos por estado</h2>
+    <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6 mb-10">
+      <h2 class="text-2xl font-bold font-display text-on-surface mb-4">Pedidos por estado</h2>
       <div class="space-y-4">
         <% 
           const statusLabels = { pending: 'Pendientes', confirmed: 'Confirmados', ready: 'Listos', delivered: 'Entregados' };
@@ -78,12 +71,12 @@
         %>
         <% for (const [status, count] of Object.entries(ordersByStatus)) { %>
           <div>
-            <div class="flex justify-between text-sm text-stone-600 mb-1">
+            <div class="flex justify-between text-sm text-on-surface-variant mb-1">
               <span><%= statusLabels[status] %></span>
               <span><%= count %></span>
             </div>
-            <div class="w-full bg-stone-200 rounded-full h-3">
-              <div class="<%= statusColors[status] %> h-3 rounded-full" <%= `style="width: ${(count / maxCount) * 100}%"` %>></div>
+            <div class="w-full bg-outline-variant h-3">
+              <div class="<%= statusColors[status] %> h-3" <%= `style="width: ${(count / maxCount) * 100}%"` %>></div>
             </div>
           </div>
         <% } %>
@@ -93,61 +86,61 @@
     <!-- Rankings -->
     <div class="grid md:grid-cols-2 gap-6 mb-10">
       <!-- Pizzas más vendidas -->
-      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
-        <h2 class="text-xl font-bold font-serif text-stone-800 mb-4">🍕 Más vendidas</h2>
+      <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6">
+        <h2 class="text-xl font-bold font-display text-on-surface mb-4">🍕 Más vendidas</h2>
         <% if (topPizzas.length > 0) { %>
           <ul class="space-y-2">
             <% topPizzas.forEach((pizza, i) => { %>
               <li class="flex justify-between items-center">
-                <span class="text-stone-700"><%= i+1 %>. <%= pizza.name %></span>
-                <span class="font-medium text-stone-800"><%= pizza.total_sold %> vendidas</span>
+                <span class="text-on-surface-variant"><%= i+1 %>. <%= pizza.name %></span>
+                <span class="font-medium text-on-surface"><%= pizza.total_sold %> vendidas</span>
               </li>
             <% }) %>
           </ul>
         <% } else { %>
-          <p class="text-stone-400">Aún no hay datos.</p>
+          <p class="text-on-surface-variant/70">Aún no hay datos.</p>
         <% } %>
       </div>
       <!-- Ingredientes más pedidos -->
-      <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
-        <h2 class="text-xl font-bold font-serif text-stone-800 mb-4">🧀 Extras más pedidos</h2>
+      <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6">
+        <h2 class="text-xl font-bold font-display text-on-surface mb-4">🧀 Extras más pedidos</h2>
         <% if (topToppings.length > 0) { %>
           <ul class="space-y-2">
             <% topToppings.forEach((topping, i) => { %>
               <li class="flex justify-between items-center">
-                <span class="text-stone-700"><%= i+1 %>. <%= topping.name %></span>
-                <span class="font-medium text-stone-800"><%= topping.times_used %> veces</span>
+                <span class="text-on-surface-variant"><%= i+1 %>. <%= topping.name %></span>
+                <span class="font-medium text-on-surface"><%= topping.times_used %> veces</span>
               </li>
             <% }) %>
           </ul>
         <% } else { %>
-          <p class="text-stone-400">Aún no hay datos.</p>
+          <p class="text-on-surface-variant/70">Aún no hay datos.</p>
         <% } %>
       </div>
     </div>
 
     <!-- Tamaños más comprados -->
-    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-10">
-      <h2 class="text-xl font-bold font-serif text-stone-800 mb-4">📏 Tamaños preferidos</h2>
+    <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6 mb-10">
+      <h2 class="text-xl font-bold font-display text-on-surface mb-4">📏 Tamaños preferidos</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <% topSizes.forEach(size => { %>
-          <div class="text-center p-3 bg-stone-50 rounded-xl">
-            <p class="text-lg font-bold text-stone-800"><%= size.label %></p>
-            <p class="text-sm text-stone-500"><%= size.times_used %> pedidos</p>
+          <div class="text-center p-3 bg-surface-container-high border border-outline-variant rounded-none">
+            <p class="text-lg font-bold text-on-surface"><%= size.label %></p>
+            <p class="text-sm text-on-surface-variant/70"><%= size.times_used %> pedidos</p>
           </div>
         <% }) %>
       </div>
     </div>
 
     <!-- Últimos pedidos -->
-    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
+    <div class="bg-surface-container border border-outline-variant rounded-none shadow-md p-6">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold font-serif text-stone-800">🕒 Últimos pedidos</h2>
-        <a href="/admin/orders" class="text-red-600 hover:underline text-sm">Ver todos →</a>
+        <h2 class="text-xl font-bold font-display text-on-surface">🕒 Últimos pedidos</h2>
+        <a href="/admin/orders" class="text-brand-red hover:underline text-sm">Ver todos →</a>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          <thead class="border-b text-stone-500">
+          <thead class="border-b border-outline-variant text-on-surface-variant">
             <tr>
               <th class="text-left py-2">Cliente</th>
               <th class="text-left py-2">Total</th>
@@ -157,19 +150,19 @@
           </thead>
           <tbody>
             <% recentOrders.forEach(order => { %>
-              <tr class="border-b border-stone-100 hover:bg-stone-50">
+              <tr class="border-b border-outline-variant/50 hover:bg-surface-container-high">
                 <td class="py-2 font-medium"><%= order.customer_name %></td>
                 <td class="py-2">$<%= order.total %></td>
                 <td class="py-2">
-                  <span class="px-2 py-0.5 rounded-full text-xs 
-                    <%= order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-                       order.status === 'confirmed' ? 'bg-blue-100 text-blue-700' : 
-                       order.status === 'ready' ? 'bg-green-100 text-green-700' : 
-                       'bg-gray-100 text-gray-700' %>">
+                  <span class="px-2 py-0.5 text-xs border 
+                    <%= order.status === 'pending' ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' : 
+                       order.status === 'confirmed' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : 
+                       order.status === 'ready' ? 'bg-green-500/15 text-green-300 border-green-500/30' : 
+                       'bg-gray-500/20 text-gray-300 border-gray-500/30' %>">
                     <%= order.status %>
                   </span>
                 </td>
-                <td class="py-2 text-stone-400"><%= new Date(order.created_at).toLocaleTimeString() %></td>
+                <td class="py-2 text-on-surface-variant/70"><%= new Date(order.created_at).toLocaleTimeString() %></td>
               </tr>
             <% }) %>
           </tbody>

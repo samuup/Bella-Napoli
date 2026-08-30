@@ -4,61 +4,54 @@
   Variables: order, items, bebidas.
 ============================================================ -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <title>Detalle del pedido #<%= order.id %> - Bella Napoli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
-  </style>
+  <%- include('partials/head', { title: `Detalle del pedido #${order.id} — Bella Napoli` }) %>
 </head>
-<body class="bg-[#e8dccc] min-h-screen">
-  <header class="bg-red-700 text-white p-4 shadow-md">
+<body class="bg-background text-on-background min-h-screen relative overflow-x-hidden font-sans">
+  <div class="texture-overlay"></div>
+  <header class="bg-surface/95 backdrop-blur-sm border-b border-outline-variant/30 p-4 sticky top-0 z-50">
     <div class="max-w-4xl mx-auto flex items-center justify-between">
-      <a href="/" class="text-2xl font-bold font-serif">🍕 Bella Napoli</a>
-      <a href="/" class="text-white/80 hover:text-white">Volver</a>
+      <a href="/" class="font-display text-headline-md text-on-surface">🍕 Bella Napoli</a>
+      <a href="/" class="text-on-surface-variant hover:text-brand-cream font-sans text-body-md">Volver</a>
     </div>
   </header>
 
   <main class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold font-serif text-stone-800 mb-6">Detalle del pedido #<%= order.id %></h1>
-    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-6">
-      <p><strong>Fecha:</strong> <%= new Date(order.created_at).toLocaleString() %></p>
-      <p><strong>Recogida:</strong> <%= order.pickup_time %></p>
-      <p><strong>Método de pago:</strong> <%= order.payment_method %></p>
+    <h1 class="font-display text-headline-lg text-brand-cream mb-6">Detalle del pedido #<%= order.id %></h1>
+    <div class="bg-primary-container border border-outline-variant/40 p-6 mb-6 font-sans text-body-md text-on-surface space-y-1">
+      <p><strong class="text-on-surface">Fecha:</strong> <%= new Date(order.created_at).toLocaleString() %></p>
+      <p><strong class="text-on-surface">Recogida:</strong> <%= order.pickup_time %></p>
+      <p><strong class="text-on-surface">Método de pago:</strong> <%= order.payment_method %></p>
       <p class="flex items-center gap-2">
-        <strong>Estado del pedido:</strong>
-        <span class="px-2 py-1 text-xs rounded-full 
-            <%= order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-            order.status === 'ready' ? 'bg-green-100 text-green-700' : 
-            'bg-gray-100 text-gray-700' %>">
+        <strong class="text-on-surface">Estado del pedido:</strong>
+        <span class="px-2 py-1 text-xs rounded font-sans 
+            <%= order.status === 'pending' ? 'bg-yellow-900/40 text-yellow-300' : 
+            order.status === 'ready' ? 'bg-brand-green/20 text-brand-green' : 
+            'bg-surface-container-high text-on-surface-variant' %>">
             <%= order.status === 'pending' ? 'Pendiente' : 
             order.status === 'ready' ? 'Listo' : 'Entregado' %>
         </span>
         </p>
         <p class="flex items-center gap-2">
-        <strong>Pago:</strong>
-        <span class="px-2 py-1 text-xs rounded-full 
-            <%= order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 
-            order.payment_status === 'rejected' ? 'bg-red-100 text-red-700' : 
-            order.payment_status === 'submitted' ? 'bg-blue-100 text-blue-700' : 
-            'bg-yellow-100 text-yellow-700' %>">
+        <strong class="text-on-surface">Pago:</strong>
+        <span class="px-2 py-1 text-xs rounded font-sans 
+            <%= order.payment_status === 'paid' ? 'bg-brand-green/20 text-brand-green' : 
+            order.payment_status === 'rejected' ? 'bg-brand-red/20 text-brand-red' : 
+            order.payment_status === 'submitted' ? 'bg-blue-900/40 text-blue-300' : 
+            'bg-yellow-900/40 text-yellow-300' %>">
             <%= order.payment_status === 'paid' ? 'Pagado' : 
             order.payment_status === 'rejected' ? 'Rechazado' : 
             order.payment_status === 'submitted' ? 'Pago reportado' : 
             'Pago pendiente' %>
         </span>
         </p>
-        <p><strong>Total:</strong> $<%= order.total %></p>
+        <p><strong class="text-on-surface">Total:</strong> <span class="font-display text-price-display text-brand-red">$<%= order.total %></span></p>
     </div>
 
-    <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6">
-      <h2 class="text-xl font-bold font-serif mb-4">Artículos</h2>
-      <ul class="space-y-2">
+    <div class="bg-primary-container border border-outline-variant/40 p-6">
+      <h2 class="font-display text-headline-md text-brand-cream mb-4">Artículos</h2>
+      <ul class="space-y-2 font-sans text-body-md text-on-surface">
         <% items.forEach(item => { %>
           <li>
             <%= item.quantity %>x <%= item.pizza_name %> (<%= item.size_label %>)

@@ -1,0 +1,84 @@
+<!-- ============================================================
+  PARTIAL: head.ejs — <head> compartido de todas las vistas
+  ------------------------------------------------------------
+  Tema "Rosso e Nero" (Authentic Italian Chic, de Stitch).
+  Uso dentro de la etiqueta head de cada vista:
+    include('partials/head', { title: '...' })
+============================================================ -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= typeof title !== 'undefined' ? title : 'Bella Napoli - Pizzería Artesanal' %></title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          surface: "#17130b",
+          "surface-dim": "#17130b",
+          "surface-bright": "#3e392e",
+          "surface-container-lowest": "#110e06",
+          "surface-container-low": "#1f1b12",
+          "surface-container": "#231f16",
+          "surface-container-high": "#2e2920",
+          "surface-container-highest": "#39342a",
+          "on-surface": "#ebe1d3",
+          "on-surface-variant": "#c4c7c7",
+          "inverse-surface": "#ebe1d3",
+          "inverse-on-surface": "#353026",
+          outline: "#8e9192",
+          "outline-variant": "#444748",
+          "surface-tint": "#c8c6c5",
+          primary: "#c8c6c5",
+          "on-primary": "#313030",
+          "primary-container": "#1a1a1a",
+          "on-primary-container": "#848282",
+          background: "#17130b",
+          "on-background": "#ebe1d3",
+          "brand-red": "#d32f2f",
+          "brand-cream": "#fff5e6",
+          "brand-green": "#388e3c"
+        },
+        fontFamily: {
+          display: ["Libre Caslon Text", "serif"],
+          sans: ["Manrope", "sans-serif"]
+        },
+        fontSize: {
+          "display-lg": ["64px", { lineHeight: "72px", letterSpacing: "-0.02em", fontWeight: "700" }],
+          "display-lg-mobile": ["40px", { lineHeight: "48px", letterSpacing: "-0.01em", fontWeight: "700" }],
+          "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "400" }],
+          "headline-md": ["24px", { lineHeight: "32px", fontWeight: "400" }],
+          "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+          "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+          "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "700" }],
+          "price-display": ["20px", { lineHeight: "24px", fontWeight: "700" }]
+        },
+        spacing: {
+          "margin-mobile": "20px",
+          "margin-desktop": "64px",
+          "container-max": "1200px",
+          gutter: "24px",
+          unit: "8px"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  /* Texture Overlay */
+  .texture-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.05"/></svg>');
+    z-index: 10;
+  }
+  .ambient-shadow {
+    box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+  }
+</style>

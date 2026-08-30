@@ -6,17 +6,10 @@
              bebidas, total.
 ============================================================ -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pedido Confirmado - Bella Napoli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <%- include('partials/head', { title: 'Pedido Confirmado — Bella Napoli' }) %>
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -24,58 +17,59 @@
     .fade-in-up { animation: fadeInUp 0.6s ease-out; }
   </style>
 </head>
-<body class="bg-[#e8dccc] min-h-screen flex items-center justify-center p-4">
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden font-sans">
+  <div class="texture-overlay"></div>
   <div class="w-full max-w-lg fade-in-up">
-    <div class="bg-[#f5efe6] rounded-2xl shadow-xl overflow-hidden border-t-4 border-green-600">
+    <div class="bg-surface-container-high border border-outline-variant ambient-shadow overflow-hidden border-t-4 border-t-brand-green">
       <div class="p-8 md:p-10 text-center">
         <div class="flex justify-center mb-4">
           <span class="text-5xl">✅</span>
         </div>
-        <h1 class="text-3xl font-bold font-serif text-stone-800">¡Pedido recibido!</h1>
-        <p class="text-stone-500 mt-2 mb-6">Gracias, <strong><%= customerName %></strong>.</p>
-        
-        <div class="bg-[#f5efe6] rounded-xl p-4 mb-4 text-sm text-stone-600 flex justify-center gap-6">
-          <span><strong>Recogida:</strong> <%= pickup_time %></span>
-          <span><strong>Pago:</strong> <%= payment_method %></span>
+        <h1 class="font-display text-headline-lg text-brand-cream">¡Pedido recibido!</h1>
+        <p class="font-sans text-body-md text-on-surface-variant mt-2 mb-6">Gracias, <strong class="text-on-surface"><%= customerName %></strong>.</p>
+
+        <div class="bg-surface-container border border-outline-variant p-4 mb-4 font-sans text-body-md text-on-surface-variant flex justify-center gap-6">
+          <span><strong class="text-on-surface">Recogida:</strong> <%= pickup_time %></span>
+          <span><strong class="text-on-surface">Pago:</strong> <%= payment_method %></span>
         </div>
 
-        <div class="text-left bg-[#f5efe6] p-4 rounded-xl mb-6">
-          <h2 class="font-bold font-serif text-lg mb-2 text-stone-700">Resumen</h2>
-          
+        <div class="text-left bg-surface-container border border-outline-variant p-4 mb-6">
+          <h2 class="font-display text-headline-md text-brand-cream mb-2">Resumen</h2>
+
           <% if (items.length > 0) { %>
-            <p class="text-sm font-medium text-stone-500 mb-1">🍕 Pizzas</p>
-            <ul class="list-disc list-inside space-y-1 mb-4">
+            <p class="font-sans text-body-md text-on-surface-variant mb-1">🍕 Pizzas</p>
+            <ul class="list-disc list-inside space-y-1 mb-4 font-sans text-body-md text-on-surface">
               <% items.forEach(item => { %>
-                <li class="text-stone-700">
+                <li>
                   <%= item.quantity %>x <%= item.pizzaName %> (<%= item.sizeLabel %>)
                   <% if (item.toppings.length > 0) { %> + <%= item.toppings.join(', ') %><% } %>
-                  = <strong>$<%= item.lineTotal.toFixed(2) %></strong>
+                  = <strong class="text-brand-red">$<%= item.lineTotal.toFixed(2) %></strong>
                 </li>
               <% }) %>
             </ul>
           <% } %>
 
           <% if (bebidas.length > 0) { %>
-            <p class="text-sm font-medium text-stone-500 mb-1">🥤 Bebidas</p>
-            <ul class="list-disc list-inside space-y-1 mb-4">
+            <p class="font-sans text-body-md text-on-surface-variant mb-1">🥤 Bebidas</p>
+            <ul class="list-disc list-inside space-y-1 mb-4 font-sans text-body-md text-on-surface">
               <% bebidas.forEach(b => { %>
-                <li class="text-stone-700">
-                  <%= b.quantity %>x <%= b.name %> = <strong>$<%= b.lineTotal.toFixed(2) %></strong>
+                <li>
+                  <%= b.quantity %>x <%= b.name %> = <strong class="text-brand-red">$<%= b.lineTotal.toFixed(2) %></strong>
                 </li>
               <% }) %>
             </ul>
           <% } %>
 
-          <div class="flex justify-between items-center mt-4 pt-4 border-t border-stone-200">
-            <span class="text-lg font-bold text-stone-700">Total</span>
-            <span class="text-2xl font-bold text-red-600">$<%= total %></span>
+          <div class="flex justify-between items-center mt-4 pt-4 border-t border-outline-variant">
+            <span class="font-sans text-body-lg text-on-surface font-bold">Total</span>
+            <span class="font-display text-price-display text-brand-red">$<%= total %></span>
           </div>
         </div>
-        
-        <a href="/order" class="inline-flex items-center justify-center w-full bg-red-700 hover:bg-red-800 text-[#f5efe6] font-bold py-3 px-6 rounded-full shadow-md hover:shadow-lg transition">
+
+        <a href="/order" class="inline-flex items-center justify-center w-full bg-brand-red hover:bg-red-800 text-brand-cream font-label-caps text-label-caps py-3 px-6 rounded-none transition">
           Hacer otro pedido
         </a>
-        <a href="/" class="inline-block mt-4 text-sm text-stone-400 hover:text-[#f5efe6] transition">
+        <a href="/" class="inline-block mt-4 font-sans text-body-md text-on-surface-variant hover:text-brand-cream transition">
           ← Volver al menú
         </a>
       </div>

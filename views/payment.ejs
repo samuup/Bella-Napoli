@@ -6,37 +6,66 @@
   esta pantalla. Variables: order, error, paymentData.
 ============================================================ -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <title>Realizar pago - Bella Napoli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <%- include('partials/head', { title: 'Realizar pago — Bella Napoli' }) %>
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+    .fl-input {
+      background-color: transparent !important;
+      border: 0;
+      border-bottom: 1px solid #fff5e6;
+      color: #fff5e6;
+      -webkit-text-fill-color: #fff5e6;
+      caret-color: #fff5e6;
+      width: 100%;
+      padding: 0.5rem 0;
+      font-family: 'Manrope', sans-serif;
+    }
+    .fl-input:focus {
+      outline: none;
+      border-color: #d32f2f;
+    }
+    .fl-input::placeholder {
+      color: #8e9192;
+    }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-text-fill-color: #fff5e6;
+      -webkit-box-shadow: 0 0 0 1000px #2e2920 inset;
+      caret-color: #fff5e6;
+      transition: background-color 9999s ease-in-out 0s;
+    }
+    input[type="file"].fl-file {
+      background: transparent;
+      border: 1px solid #444748;
+      color: #c4c7c7;
+      padding: 0.6rem;
+      border-radius: 0;
+      font-family: 'Manrope', sans-serif;
+    }
   </style>
 </head>
-<body class="bg-[#e8dccc] min-h-screen flex items-center justify-center p-4">
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden font-sans">
+  <div class="texture-overlay"></div>
   <div class="w-full max-w-lg">
-    <div class="bg-[#f5efe6] rounded-2xl shadow-xl overflow-hidden border-t-4 border-red-600">
+    <div class="bg-surface-container-high border border-outline-variant ambient-shadow overflow-hidden">
       <div class="p-8">
         <div class="text-center mb-6">
           <span class="text-5xl">💳</span>
-          <h1 class="text-3xl font-bold font-serif text-stone-800">Finalizar pago</h1>
-          <p class="text-stone-500">Total $<%= order.total %></p>
+          <h1 class="font-display text-headline-lg text-brand-cream">Finalizar pago</h1>
+          <p class="font-sans text-body-md text-on-surface-variant">Total <span class="font-display text-price-display text-brand-red">$<%= order.total %></span></p>
         </div>
 
         <% if (error) { %>
-          <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-2xl mb-6"><%= error %></div>
+          <div class="bg-red-900/40 border border-brand-red text-brand-cream px-4 py-3 mb-6 font-sans text-body-md"><%= error %></div>
         <% } %>
 
-        <div class="bg-stone-50 rounded-xl p-4 mb-6 text-sm text-stone-600">
-            <p><strong>Método de pago:</strong> <%= order.payment_method %></p>
+        <div class="bg-surface-container border border-outline-variant p-4 mb-6 font-sans text-body-md text-on-surface-variant">
+            <p class="text-on-surface"><strong>Método de pago:</strong> <%= order.payment_method %></p>
             <% if (paymentData) { %>
-                <p><strong>Instrucciones:</strong></p>
-                <ul class="list-disc list-inside">
+                <p class="mt-2 text-label-caps text-label-caps text-brand-red uppercase tracking-widest">Instrucciones</p>
+                <ul class="list-disc list-inside mt-1">
                 <% paymentData.instructions.forEach(instruction => { %>
                     <li><%= instruction %></li>
                 <% }) %>
@@ -46,21 +75,21 @@
             <% } %>
         </div>
 
-        <form action="/payment" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="/payment" method="POST" enctype="multipart/form-data" class="space-y-6">
           <%- include('csrf') %>
           <label class="block">
-            <span class="text-stone-700 font-medium">Número de referencia</span>
+            <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Número de referencia</span>
             <input type="text" name="payment_ref" id="paymentRef" placeholder="123456"
                 inputmode="numeric" pattern="\d{6}" title="Solo 6 dígitos"
-                class="mt-1 block w-full border border-stone-300 rounded-xl p-3 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                class="fl-input mt-1">
 
           </label>
           <label class="block">
-            <span class="text-stone-700 font-medium">Comprobante (imagen)</span>
+            <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Comprobante (imagen)</span>
             <input type="file" name="receipt" accept="image/jpeg,image/png,image/webp"
-                   class="mt-1 block w-full border border-stone-300 rounded-xl p-3">
+                   class="fl-file mt-2 block w-full">
           </label>
-          <button type="submit" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3 rounded-full transition">
+          <button type="submit" class="w-full bg-brand-red hover:bg-red-800 text-brand-cream font-label-caps text-label-caps py-4 rounded-none transition active:scale-[0.99]">
             Ya pagué
           </button>
         </form>

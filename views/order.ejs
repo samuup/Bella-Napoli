@@ -7,16 +7,10 @@
   Variables: pizzas, sizes, toppings, prices, bebidas.
 ============================================================ -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🍕 Realizar pedido - Bella Napoli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <%- include('partials/head', { title: 'Arma tu pedido — Bella Napoli' }) %>
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
     @keyframes pop {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
@@ -32,90 +26,105 @@
       background-repeat: no-repeat;
     }
     .custom-checkbox.no-hover:hover {
-      background-color: white !important;
-      border-color: #d1d5db !important;
+      background-color: transparent !important;
+      border-color: #444748 !important;
+    }
+    .step-input {
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid #fff5e6;
+      color: #fff5e6;
+      padding: 0.5rem 0;
+      font-family: 'Manrope', sans-serif;
+    }
+    .step-input:focus {
+      outline: none;
+      border-color: #d32f2f;
     }
   </style>
 </head>
-<body class="bg-[#e8dccc] min-h-screen">
-  <header class="bg-red-700 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <a href="/" class="flex items-center space-x-2">
+<body class="bg-background text-on-background min-h-screen relative overflow-x-hidden font-sans">
+  <div class="texture-overlay"></div>
+
+  <header class="sticky top-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-outline-variant/30">
+    <div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-3 flex justify-between items-center">
+      <a href="/" class="flex items-center gap-3">
         <span class="text-3xl">🍕</span>
-        <h1 class="text-2xl font-bold font-serif">Bella Napoli</h1>
+        <h1 class="font-display text-headline-md text-on-surface hover:opacity-80 transition-opacity">Bella Napoli</h1>
       </a>
-      <div class="flex items-center space-x-4">
-        <span>Hola, <%= currentUser.name %></span>
-        <a href="/logout" class="bg-white text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition">Salir</a>
+      <div class="flex items-center gap-4">
+        <span class="font-sans text-body-md text-on-surface-variant">Hola, <%= currentUser.name %></span>
+        <a href="/logout" class="bg-transparent border border-brand-red text-brand-cream px-5 py-2 font-label-caps text-label-caps rounded-none hover:bg-brand-red transition-colors duration-300">Salir</a>
       </div>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-8">
-    <h2 class="text-4xl font-bold font-serif text-center mb-8 text-stone-800">Arma tu pedido</h2>
+  <main class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop py-10">
+    <h2 class="font-display text-headline-lg text-brand-cream text-center mb-10">Arma tu pedido</h2>
+    <span class="block text-center font-sans text-label-caps text-brand-red mb-10 uppercase tracking-widest">Rosso e Nero · Tradición artesanal</span>
 
     <form action="/order" method="POST" id="orderForm">
       <%- include('csrf') %>
 
       <!-- Paso 1: Pizzas -->
       <section id="step-1" class="step">
-        <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">🍕 Elige tus pizzas</h3>
+        <h3 class="font-display text-headline-md mb-6 text-brand-cream">🍕 Elige tus pizzas</h3>
         <% pizzas.forEach((pizza, idx) => { %>
-          <div class="bg-[#f5efe6] rounded-2xl shadow-md hover:shadow-lg transition-all mb-4 overflow-hidden border border-stone-100">
+          <div class="bg-primary-container border border-outline-variant/40 hover:border-brand-red/50 transition-all mb-4 overflow-hidden">
             <div class="p-5 flex items-center justify-between cursor-pointer select-none" onclick="this.parentElement.querySelector('.pizza-check').click()">
               <div class="flex items-center space-x-4">
                 <input type="checkbox" name="pizzas[<%= idx %>][selected]" value="1"
-                    class="appearance-none h-6 w-6 rounded border-2 border-stone-300 bg-white cursor-pointer transition-all duration-200 ease-in-out
-                            hover:border-red-600 hover:bg-red-50
-                            focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-offset-0
-                            checked:bg-red-600 checked:border-red-600 checked:hover:bg-red-700 checked:hover:border-red-700
+                    class="appearance-none h-6 w-6 rounded border-2 border-outline bg-transparent cursor-pointer transition-all duration-200 ease-in-out
+                            hover:border-brand-red
+                            focus:outline-none focus:ring-4 focus:ring-brand-red/30
+                            checked:bg-brand-red checked:border-brand-red
                             pizza-check custom-checkbox"
                     onclick="event.stopPropagation()">
                 <div>
-                  <h3 class="text-xl font-semibold text-stone-800"><%= pizza.name %></h3>
-                  <p class="text-sm text-stone-500"><%= pizza.description %></p>
+                  <h3 class="font-display text-headline-md text-on-surface"><%= pizza.name %></h3>
+                  <p class="font-sans text-body-md text-on-surface-variant"><%= pizza.description %></p>
                 </div>
               </div>
-              <span class="text-stone-400 font-medium">
+              <span class="text-on-surface-variant font-sans text-body-md">
                 <% if (prices[pizza.id]) { %>
                   Desde $<%= Math.min(...Object.values(prices[pizza.id])).toFixed(2) %>
                 <% } %>
               </span>
             </div>
-            <div class="pizza-options hidden border-t border-stone-100 bg-stone-50 px-5 py-4" id="options-<%= idx %>">
+            <div class="pizza-options hidden border-t border-outline-variant/40 bg-surface-container-low px-5 py-4" id="options-<%= idx %>">
               <div class="grid grid-cols-2 gap-4">
                 <label class="block">
-                  <span class="text-sm font-medium text-stone-600">Tamaño</span>
-                  <select name="pizzas[<%= idx %>][size]" class="size-select mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
+                  <span class="font-sans text-body-md text-on-surface-variant">Tamaño</span>
+                  <select name="pizzas[<%= idx %>][size]" class="size-select mt-1 block w-full rounded-none bg-surface-container border border-outline-variant text-on-surface font-sans">
                     <% sizes.forEach(size => { %>
                       <option value="<%= size.id %>"><%= size.label %></option>
                     <% }) %>
                   </select>
                 </label>
                 <label class="block">
-                  <span class="text-sm font-medium text-stone-600">Cantidad</span>
+                  <span class="font-sans text-body-md text-on-surface-variant">Cantidad</span>
                   <div class="flex items-center mt-1 gap-1">
                     <button type="button" data-step-down="pizza-qty-<%= idx %>"
-                            class="stepper-btn w-9 h-9 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                            class="stepper-btn w-9 h-9 rounded-full bg-transparent border border-brand-cream text-brand-cream font-bold text-lg leading-none select-none active:bg-white/10 transition"
                             aria-label="Disminuir">−</button>
                     <input type="number" name="pizzas[<%= idx %>][quantity]" id="pizza-qty-<%= idx %>"
                            min="1" max="30" value="1" step="1"
                            onkeydown="return false;"
-                           class="quantity-input w-14 text-center border rounded-lg py-2 mx-1 bg-white">
+                           class="quantity-input w-14 text-center bg-transparent border border-outline-variant text-on-surface font-sans py-2 mx-1">
                     <button type="button" data-step-up="pizza-qty-<%= idx %>"
-                            class="stepper-btn w-9 h-9 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                            class="stepper-btn w-9 h-9 rounded-full bg-transparent border border-brand-cream text-brand-cream font-bold text-lg leading-none select-none active:bg-white/10 transition"
                             aria-label="Aumentar">+</button>
                   </div>
                 </label>
               </div>
               <div class="mt-4">
-                <span class="text-sm font-medium text-stone-600">Ingredientes extra</span>
+                <span class="font-sans text-body-md text-on-surface-variant">Ingredientes extra</span>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                   <% toppings.forEach(topping => { %>
-                    <label class="flex items-center space-x-2 bg-white p-2 rounded-lg border border-stone-200 hover:border-red-300 transition cursor-pointer">
+                    <label class="flex items-center space-x-2 bg-surface-container p-2 rounded-none border border-outline-variant hover:border-brand-red/60 transition cursor-pointer">
                       <input type="checkbox" name="pizzas[<%= idx %>][toppings][]" value="<%= topping.id %>"
-                             class="topping-check form-checkbox h-4 w-4 text-red-600 rounded">
-                      <span class="text-sm"><%= topping.name %> (+$<%= topping.extra_price.toFixed(2) %>)</span>
+                             class="topping-check form-checkbox h-4 w-4 text-brand-red rounded">
+                      <span class="font-sans text-body-md text-on-surface"><%= topping.name %> (+$<%= topping.extra_price.toFixed(2) %>)</span>
                     </label>
                   <% }) %>
                 </div>
@@ -123,78 +132,79 @@
             </div>
           </div>
         <% }) %>
-        <button type="button" onclick="nextStep(2)" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
+        <button type="button" onclick="nextStep(2)" class="w-full bg-brand-red hover:bg-red-800 text-brand-cream font-label-caps text-label-caps text-lg py-4 rounded-none shadow-xl transition">
           Siguiente →
         </button>
       </section>
 
       <!-- Paso 2: Pregunta por bebidas -->
       <section id="step-2" class="step hidden">
-        <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">¿Deseas agregar bebidas o acompañantes?</h3>
+        <h3 class="font-display text-headline-md mb-6 text-brand-cream">¿Deseas agregar bebidas o acompañantes?</h3>
         <div class="flex gap-4">
-          <button type="button" onclick="chooseBebidas(true)" class="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-8 rounded-full transition">Sí, quiero bebidas</button>
-          <button type="button" onclick="chooseBebidas(false)" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 px-8 rounded-full transition">No, gracias</button>
+          <button type="button" onclick="chooseBebidas(true)" class="bg-brand-red hover:bg-red-800 text-brand-cream font-label-caps text-label-caps py-3 px-8 rounded-none transition">Sí, quiero bebidas</button>
+          <button type="button" onclick="chooseBebidas(false)" class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-caps text-label-caps py-3 px-8 rounded-none border border-outline-variant transition">No, gracias</button>
         </div>
-        <button type="button" onclick="prevStep(1)" class="mt-6 text-stone-500 hover:text-stone-700 transition">← Atrás</button>
+        <button type="button" onclick="prevStep(1)" class="mt-6 text-on-surface-variant hover:text-brand-cream transition font-sans text-body-md">← Atrás</button>
       </section>
 
       <!-- Paso 3: Bebidas (si eligió sí) -->
       <section id="step-3" class="step hidden">
-        <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">🥤 Bebidas</h3>
+        <h3 class="font-display text-headline-md mb-6 text-brand-cream">🥤 Bebidas</h3>
         <% bebidas.forEach(bebida => { %>
-          <div class="bg-[#f5efe6] rounded-2xl shadow-md hover:shadow-lg transition-all mb-4 p-5 flex items-center justify-between border border-stone-100">
+          <div class="bg-primary-container border border-outline-variant/40 hover:border-brand-red/50 transition-all mb-4 p-5 flex items-center justify-between">
             <div class="flex items-center space-x-4">
               <span class="text-3xl">🥤</span>
               <div>
-                <h3 class="text-xl font-semibold text-stone-800"><%= bebida.name %></h3>
-                <p class="text-sm text-stone-500">$<%= bebida.price.toFixed(2) %></p>
+                <h3 class="font-display text-headline-md text-on-surface"><%= bebida.name %></h3>
+                <p class="font-sans text-body-md text-on-surface-variant">$<%= bebida.price.toFixed(2) %></p>
               </div>
             </div>
             <div class="flex items-center space-x-2">
-              <label class="text-sm font-medium text-stone-600">Cantidad</label>
+              <label class="font-sans text-body-md text-on-surface-variant">Cantidad</label>
               <div class="flex items-center gap-1">
                 <button type="button" data-step-down="bebida-qty-<%= bebida.id %>"
-                        class="stepper-btn w-8 h-8 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                        class="stepper-btn w-8 h-8 rounded-full bg-transparent border border-brand-cream text-brand-cream font-bold text-lg leading-none select-none active:bg-white/10 transition"
                         aria-label="Disminuir">−</button>
                 <input type="number" name="bebidas[<%= bebida.id %>]" id="bebida-qty-<%= bebida.id %>" min="0" max="30" value="0" step="1"
                        onkeydown="return false;"
-                       class="bebida-qty w-12 text-center border rounded-lg py-1.5 mx-1 quantity-input">
+                       class="bebida-qty w-12 text-center bg-transparent border border-outline-variant text-on-surface font-sans py-1.5 mx-1 quantity-input">
                 <button type="button" data-step-up="bebida-qty-<%= bebida.id %>"
-                        class="stepper-btn w-8 h-8 rounded-full bg-white border border-stone-300 text-stone-700 font-bold text-lg leading-none select-none active:bg-stone-200 transition"
+                        class="stepper-btn w-8 h-8 rounded-full bg-transparent border border-brand-cream text-brand-cream font-bold text-lg leading-none select-none active:bg-white/10 transition"
                         aria-label="Aumentar">+</button>
               </div>
             </div>
           </div>
         <% }) %>
-        <button type="button" onclick="nextStep(4)" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
+        <button type="button" onclick="nextStep(4)" class="w-full bg-brand-red hover:bg-red-800 text-brand-cream font-label-caps text-label-caps text-lg py-4 rounded-none shadow-xl transition">
           Siguiente →
         </button>
-        <button type="button" onclick="prevStep(2)" class="mt-4 text-stone-500 hover:text-stone-700 transition">← Atrás</button>
+        <button type="button" onclick="prevStep(2)" class="mt-4 text-on-surface-variant hover:text-brand-cream transition font-sans text-body-md">← Atrás</button>
       </section>
 
       <!-- Paso 4: Datos de contacto -->
       <section id="step-4" class="step hidden">
-        <div class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-6">
-          <h3 class="text-2xl font-bold font-serif mb-6 text-stone-800">Datos de contacto</h3>
+        <div class="bg-primary-container border border-outline-variant/40 p-6 mb-6">
+          <h3 class="font-display text-headline-md mb-6 text-brand-cream">Datos de contacto</h3>
           <div class="grid md:grid-cols-2 gap-6">
             <label class="block">
-              <span class="text-sm font-medium text-stone-600">Teléfono</span>
+              <span class="font-sans text-body-md text-on-surface-variant">Teléfono</span>
               <input type="tel" name="phone" id="phoneInput" required 
                      placeholder="0000-0000000" maxlength="12"
                      pattern="^\d{4}-\d{7}$" 
-                     class="mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
-              <span id="phoneError" class="text-red-500 text-sm hidden mt-1">⛔ Código de área inexistente</span>
+                     class="mt-1 block w-full step-input">
+              <span id="phoneError" class="text-brand-red text-sm hidden mt-1 font-sans">⛔ Código de área inexistente</span>
             </label>
-            <label class="block">Hora de recogida:
+            <label class="block">
+              <span class="font-sans text-body-md text-on-surface-variant">Hora de recogida</span>
               <input type="time" name="pickup_time" id="pickupTime" required
               min="17:00" max="23:59"
-              class="border rounded p-2 w-full">
-              <span id="timeError" class="text-red-500 text-sm hidden mt-1">⛔ El horario de recogida es de 5:00 PM a 11:59 PM</span>
+              class="mt-1 block w-full step-input">
+              <span id="timeError" class="text-brand-red text-sm hidden mt-1 font-sans">⛔ El horario de recogida es de 5:00 PM a 11:59 PM</span>
             </label>
             <label class="block md:col-span-2">
-              <span class="text-sm font-medium text-stone-600">Método de pago</span>
+              <span class="font-sans text-body-md text-on-surface-variant">Método de pago</span>
               <select name="payment_method" id="paymentMethod" required 
-                      class="mt-1 block w-full rounded-lg border-stone-200 shadow-sm">
+                      class="mt-1 block w-full rounded-none bg-surface-container border border-outline-variant text-on-surface font-sans">
                 <option value="">Selecciona...</option>
                 <option value="Efectivo en local">Efectivo en local</option>
                 <option value="Pago móvil">Pago móvil</option>
@@ -206,19 +216,19 @@
           </div>
         </div>
 
-        <div id="orderSummary" class="bg-[#f5efe6] rounded-2xl shadow-md p-6 mb-6 hidden border-l-4 border-red-600">
-          <h3 class="text-xl font-bold font-serif mb-4">Tu pedido</h3>
-          <ul id="summaryList" class="space-y-2"></ul>
-          <div class="flex justify-between items-center mt-4 pt-4 border-t">
-            <span class="text-lg font-bold">Total</span>
-            <span class="text-2xl font-bold text-red-600">$<span id="totalPrice">0.00</span></span>
+        <div id="orderSummary" class="bg-surface-container border border-outline-variant/40 p-6 mb-6 hidden border-l-4 border-l-brand-red">
+          <h3 class="font-display text-headline-md text-brand-cream mb-4">Tu pedido</h3>
+          <ul id="summaryList" class="space-y-2 font-sans text-body-md text-on-surface"></ul>
+          <div class="flex justify-between items-center mt-4 pt-4 border-t border-outline-variant">
+            <span class="font-sans text-body-lg text-on-surface font-bold">Total</span>
+            <span class="font-display text-price-display text-brand-red">$<span id="totalPrice">0.00</span></span>
           </div>
         </div>
 
-        <button type="submit" id="submitOrderBtn" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition">
+        <button type="submit" id="submitOrderBtn" class="w-full bg-brand-red hover:bg-red-800 text-brand-cream font-label-caps text-label-caps text-lg py-4 rounded-none shadow-xl transition">
           Enviar pedido 🍕
         </button>
-        <button type="button" onclick="prevStep(3)" class="mt-4 text-stone-500 hover:text-stone-700 transition">← Atrás</button>
+        <button type="button" onclick="prevStep(3)" class="mt-4 text-on-surface-variant hover:text-brand-cream transition font-sans text-body-md">← Atrás</button>
       </section>
     </form>
   </main>

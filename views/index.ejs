@@ -7,114 +7,182 @@
   Variables: pizzas, sizes, toppings, prices, notifications.
 ============================================================ -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🍕 Bella Napoli - Pizzería Artesanal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
-    .hero-pattern { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,160L48,176C96,192,192,224,288,229.3C384,235,480,213,576,186.7C672,160,768,128,864,128C960,128,1056,160,1152,176C1248,192,1344,192,1392,192L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>'); background-size: cover; background-position: bottom; }
-  </style>
+  <%- include('partials/head', { title: 'Bella Napoli - Pizzería Artesanal' }) %>
 </head>
-<body class="bg-[#e8dccc] min-h-screen">
-  <!-- Header -->
-  <header class="bg-red-700 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <a href="/" class="flex items-center space-x-2">
+<body class="bg-background text-on-background min-h-screen relative overflow-x-hidden font-sans">
+  <!-- Texture Overlay -->
+  <div class="texture-overlay"></div>
+
+  <!-- Header / Navbar -->
+  <nav class="sticky top-0 w-full z-50 bg-surface/95 backdrop-blur-sm border-b border-outline-variant/30 transition-all duration-300" id="navbar">
+    <div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-unit-2 max-w-container-max mx-auto">
+      <a href="/" class="flex items-center gap-3">
         <span class="text-3xl">🍕</span>
-        <h1 class="text-2xl font-bold font-serif tracking-wide text-[#f5efe6]">Bella Napoli</h1>
+        <h1 class="font-display text-headline-md tracking-tight text-on-surface hover:opacity-80 transition-opacity">Bella Napoli</h1>
       </a>
-      <nav class="flex items-center space-x-6">
-        <a href="/" class="hover:text-[#f5efe6] transition">Menú</a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#menu" class="font-sans text-body-md text-on-surface-variant hover:text-brand-cream transition-colors">Menú</a>
+        <a href="#about" class="font-sans text-body-md text-on-surface-variant hover:text-brand-cream transition-colors">Historia</a>
+        <a href="/order" class="font-sans text-body-md text-on-surface-variant hover:text-brand-cream transition-colors">Pedir</a>
+      </div>
+
+      <!-- Trailing actions -->
+      <div class="flex items-center gap-3">
+        <!-- Notificaciones -->
         <div class="relative">
-          <button id="notificationBell" class="text-[#f5efe6] hover:text-red-200 transition relative">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
+          <button id="notificationBell" class="text-on-surface hover:text-brand-cream transition relative p-2">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+            <span id="notificationBadge" class="hidden absolute top-0 right-0 bg-brand-red text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-sans">0</span>
           </button>
-          <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-64 bg-[#f5efe6] rounded-lg shadow-xl overflow-hidden z-50">
-            <div class="bg-[#f5efe6] border-b border-stone-200 px-4 py-3 flex items-center justify-between">
-              <h3 class="font-bold font-serif text-stone-800 text-lg">Notificaciones</h3>
-              <button id="clearAllNotifications" class="text-stone-500 hover:text-red-600 text-xs underline">Limpiar todas</button>
+          <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-64 bg-surface-container-high border border-outline-variant rounded-none shadow-xl overflow-hidden z-50">
+            <div class="bg-surface-container-high border-b border-outline-variant px-4 py-3 flex items-center justify-between">
+              <h3 class="font-display text-headline-md text-on-surface text-lg">Notificaciones</h3>
+              <button id="clearAllNotifications" class="text-on-surface-variant hover:text-brand-red text-xs underline">Limpiar todas</button>
             </div>
-            <ul id="notificationList" class="max-h-60 overflow-y-auto divide-y divide-stone-100">
+            <ul id="notificationList" class="max-h-60 overflow-y-auto divide-y divide-outline-variant/30 bg-surface">
               <!-- Las notificaciones se cargarán aquí por JavaScript -->
             </ul>
           </div>
         </div>
+
         <% if (currentUser) { %>
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center gap-3">
             <% if (currentUser.role === 'admin') { %>
-              <a href="/admin" class="bg-white/20 text-[#f5efe6] border border-white/50 px-4 py-2 rounded-full font-semibold hover:bg-[#f5efe6] hover:text-red-700 transition shadow">⚙️ Admin</a>
+              <a href="/admin" class="bg-transparent border border-brand-red text-brand-cream px-4 py-2 font-label-caps text-label-caps rounded-none hover:bg-brand-red transition-colors duration-300">⛭ Admin</a>
             <% } %>
-            <a href="/order" class="bg-[#e8dccc] text-red-700 px-4 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Hacer pedido</a>
+            <a href="/order" class="bg-brand-red text-brand-cream px-6 py-3 font-label-caps text-label-caps rounded-none hover:bg-red-800 transition-colors duration-300 active:scale-95 shadow-sm">Hacer pedido</a>
             <div class="relative group">
-              <button class="flex items-center space-x-1 text-[#f5efe6] hover:text-red-200 transition">
+              <button class="flex items-center gap-1 text-on-surface hover:text-brand-cream transition font-sans text-body-md">
                 <span>Hola, <%= currentUser.name.split(' ')[0] %></span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 0;">arrow_drop_down</span>
               </button>
-              <div class="absolute right-0 mt-2 w-48 bg-[#f5efe6] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <a href="/logout" class="block px-4 py-2 text-stone-700 hover:bg-gray-100 rounded-lg">Cerrar sesión</a>
+              <div class="absolute right-0 mt-2 w-48 bg-surface-container-high border border-outline-variant shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 rounded-none">
+                <a href="/logout" class="block px-4 py-2 text-on-surface hover:bg-surface-container-low font-sans text-body-md">Cerrar sesión</a>
               </div>
             </div>
           </div>
         <% } else { %>
-          <a href="/login" class="bg-[#e8dccc] text-red-700 px-6 py-2 rounded-full font-semibold hover:bg-red-50 transition shadow">Iniciar sesión</a>
+          <a href="/login" class="hidden md:block bg-brand-red text-brand-cream px-6 py-3 font-label-caps text-label-caps rounded-none hover:bg-red-800 transition-colors duration-300">Iniciar sesión</a>
         <% } %>
-      </nav>
+      </div>
     </div>
-  </header>
+  </nav>
 
   <!-- Hero -->
-  <section class="hero-pattern bg-red-600 text-white py-20">
-    <div class="max-w-7xl mx-auto px-4 text-center">
-      <h2 class="text-5xl md:text-6xl font-bold font-serif mb-6 text-[#f5efe6]">El auténtico sabor italiano</h2>
-      <p class="text-xl md:text-2xl mb-10 max-w-2xl mx-auto text-[#f5efe6]">Pizzas artesanales horneadas en horno de leña con ingredientes frescos</p>
-      <% if (currentUser) { %>
-        <a href="/order" class="inline-block bg-[#f5efe6] text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Hacer mi pedido</a>
-      <% } else { %>
-        <a href="/login" class="inline-block bg-[#f5efe6] text-red-700 font-bold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transform transition">Empezar a pedir</a>
-      <% } %>
+  <section class="relative min-h-[70vh] flex items-center justify-center pt-16 pb-20 px-margin-mobile md:px-margin-desktop">
+    <div class="absolute inset-0 z-0">
+      <div class="bg-cover bg-center w-full h-full opacity-40" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAeQzhdimfD5a4Arm1yZpx5MV49dCSgv0-xzoRCWjEatq1XrZhVH9eD8B4uIV2eWxhYPM6f7X6DhgbX433xnPfFYYKE4Yrffi8ubndILCzaOOsM556lTXNExoNprv6a_TpUHaOFKxPxDlkqDb7Y0ZqPFjuJY2uTwjpURxLlDS69O9HNOeV-0v0oEbzqCrSix0v9pOp1aHYf6x2acK6xc4c62mWDqOzXm2SQDnfJRQnXhI916C4JAlctkg')"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
+    </div>
+    <div class="relative z-10 max-w-container-max mx-auto text-center mt-10 md:mt-0">
+      <h2 class="font-display text-display-lg-mobile md:text-display-lg text-brand-cream mb-6">El auténtico sabor italiano</h2>
+      <p class="font-sans text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10">
+        Pizzas artesanales horneadas en horno de leña con ingredientes frescos, elaboradas en el corazón de la tradición.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <% if (currentUser) { %>
+          <a href="/order" class="bg-brand-red text-brand-cream px-8 py-4 font-label-caps text-label-caps rounded-none hover:bg-red-800 transition-colors duration-300">HACER MI PEDIDO</a>
+        <% } else { %>
+          <a href="/login" class="bg-brand-red text-brand-cream px-8 py-4 font-label-caps text-label-caps rounded-none hover:bg-red-800 transition-colors duration-300">EMPEZAR A PEDIR</a>
+        <% } %>
+        <a href="#menu" class="bg-transparent border border-brand-cream text-brand-cream px-8 py-4 font-label-caps text-label-caps rounded-none hover:bg-white/10 transition-colors duration-300">VER MENÚ</a>
+      </div>
     </div>
   </section>
 
   <!-- Menú de pizzas -->
-  <main class="max-w-7xl mx-auto px-4 py-16">
-    <h2 class="text-4xl font-bold font-serif text-center mb-12 text-stone-800">Nuestras Pizzas</h2>
-    
-    <div class="grid md:grid-cols-2 gap-8">
-      <% pizzas.forEach(pizza => { %>
-        <div class="bg-[#f5efe6] rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
-          <div class="p-6 flex justify-between items-start">
-            <div class="flex-1">
-              <h3 class="text-2xl font-bold text-stone-800 mb-2"><%= pizza.name %></h3>
-              <p class="text-stone-500 mb-4"><%= pizza.description %></p>
-              <% if (prices[pizza.id]) { %>
-                <div class="mt-2 flex flex-wrap gap-2">
-                  <% sizes.forEach(size => { %>
-                    <div class="bg-[#f5efe6] border border-stone-200 rounded-lg px-3 py-1 text-center">
-                      <span class="block text-xs text-stone-500"><%= size.label %></span>
-                      <span class="font-bold text-red-600">$<%= prices[pizza.id][size.id] ? prices[pizza.id][size.id].toFixed(2) : '0.00' %></span>
+  <main class="px-margin-mobile md:px-margin-desktop py-24 bg-surface-container-low" id="menu">
+    <div class="max-w-container-max mx-auto">
+      <div class="flex justify-between items-end mb-16 border-b border-outline-variant pb-4">
+        <h2 class="font-display text-headline-lg text-brand-cream">Nuestras Pizzas</h2>
+        <span class="font-sans text-label-caps text-label-caps text-brand-red border-b border-brand-red pb-1">SIGNATURE PIZZAS</span>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-gutter">
+        <%
+          const pizzaImgs = [
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuC1VSzLMw_WrDA6Gp61rK66jNuormkuXAksUCH7R2WbSsSx1bzH3xufabNqU4zjWnwdCVKc4i2phDIotnDXEETr1lx8eOehzi13CVJLSUwTrlqg13Tt1C1k6BLxLnYhKXf2dPQJn5_o9Pvx5waRCqbmdktUnqTHZSN0KY9AfxbCmFou20okgp8CdKHpao4B49AWapRLKEftZVTxDgaro4V9hW-5clFW7jd8SvFAMDTki4V7Zm_Oi-u6MA',
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuAhgGj1O-pkCqle-eT7GU5fubbUP6sJJZhtEjJ8eTzKOerE6efxDBIe41azSYgrWVABQBuiyd66kUKPDuN8_ayGYh8z1gAosvKMPXsGEzGNLqYXU2Jli-4MsU8PgQp7Di2SMF5uJsJm50O86ZM1uWmefW-0taCRRjKyxQr_IXuP7js509eB3tYNz_owtzhhwrQLEI5cxxNXoO0r6OHbk461zn_Gs_A37kkxmqdZn08_epz_EgK9_iRD4w',
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuAHKfLoBNjGdtA1dhWdcW9FqFIzUAZJO1kFlC9emby5Jfw3Y2f_hvZA79sViWjZ9RA2EqVXnAn5dXwYPUY_OKJOFtu8KNBDg3aapVrRc-mY8chuSCHfmGWl73QCU97n8Fz_MkQHdnr1wa3ByJbNztet7Uc_4orRFktUYH7TUIBHY9KL7yXc22Zl3fJWbM4kN1bxSKXr6F8jfLxwOW_kAikAe9troCqHBwrymawOn5LEdI2psEGyL-2mkA'
+          ];
+        %>
+        <% pizzas.forEach((pizza, i) => { %>
+          <div class="bg-primary-container group relative overflow-hidden ambient-shadow min-h-[340px] flex flex-col justify-end">
+            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-60" data-alt="Fotografía artística y artesanal de la pizza <%= pizza.name %>." style="background-image: url('<%= pizzaImgs[i % pizzaImgs.length] %>')"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
+            <div class="relative p-8 w-full">
+              <div class="flex justify-between items-end gap-4">
+                <div class="flex-1">
+                  <h3 class="font-display text-headline-md text-brand-cream mb-2"><%= pizza.name %></h3>
+                  <p class="font-sans text-body-md text-on-surface-variant max-w-md"><%= pizza.description %></p>
+                  <% if (prices[pizza.id]) { %>
+                    <div class="mt-4 flex flex-wrap gap-3 border-t border-outline-variant/40 pt-4">
+                      <% sizes.forEach(size => { %>
+                        <div class="text-center">
+                          <span class="block font-sans text-xs text-on-surface-variant"><%= size.label %></span>
+                          <span class="font-display text-price-display text-brand-red">$<%= prices[pizza.id][size.id] ? prices[pizza.id][size.id].toFixed(2) : '0.00' %></span>
+                        </div>
+                      <% }) %>
                     </div>
-                  <% }) %>
+                  <% } %>
                 </div>
-              <% } %>
+              </div>
             </div>
-            <div class="text-7xl ml-4 transform group-hover:scale-110 transition">🍕</div>
           </div>
-        </div>
-      <% }) %>
+        <% }) %>
+      </div>
     </div>
   </main>
 
+  <!-- Nuestra Historia -->
+  <section class="py-32 px-margin-mobile md:px-margin-desktop bg-surface relative overflow-hidden" id="about">
+    <div class="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+      <div class="relative h-[500px] w-full ambient-shadow">
+        <div class="absolute inset-0 bg-cover bg-center h-full w-full grayscale contrast-125" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDoXvQFSgyVAqhq-6osVmH0LNlju9CDI3LCvOkElrsJvQRjROFbgow4Jplv8X0VcxK1i2BI4S9a3CJnJpQyWgociCSSMgExw8OBsnrYV0_3R1zJ59nyQvAGKV4bsFnrWEyI-d2OEK7O54puMbchjWcMzNORds0U4QVnKWBCwr19dh5xqpXzXx_Au4SNav7pAW-AeoLERieqacZYS8-RWmTCt18CC4WjYDnSmmBRb_-4i3KzRPNnnByLjA')"></div>
+        <div class="absolute inset-4 border border-outline-variant/30 pointer-events-none"></div>
+      </div>
+      <div class="flex flex-col justify-center">
+        <span class="font-sans text-label-caps text-brand-red mb-4 tracking-widest uppercase">Nuestra Herencia</span>
+        <h2 class="font-display text-display-lg-mobile md:text-display-lg text-brand-cream mb-8">Raíces en la Tradición</h2>
+        <p class="font-sans text-body-lg text-on-surface-variant mb-6 leading-relaxed">
+          Durante generaciones hemos honrado las técnicas ancestrales de la pizza napolitana. No es solo una receta; es una disciplina.
+        </p>
+        <p class="font-sans text-body-lg text-on-surface-variant mb-10 leading-relaxed">
+          Nuestra masa reposa durante horas dando vida a cada borde. Seleccionamos ingredientes frescos y auténticos para un sabor inconfundible.
+        </p>
+        <a href="/order" class="self-start text-brand-cream font-sans text-label-caps border-b border-brand-red pb-1 hover:text-brand-red transition-colors">HACER UN PEDIDO</a>
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
-  <footer class="bg-stone-900 text-stone-400 py-8">
-    <div class="max-w-7xl mx-auto px-4 text-center">
-      <p>© 2026 Bella Napoli · Todos los derechos reservados</p>
+  <footer class="bg-surface-container-low border-t border-outline-variant w-full">
+    <div class="px-margin-mobile md:px-margin-desktop py-16 max-w-container-max mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+        <div class="flex flex-col gap-4">
+          <span class="font-display text-headline-md text-on-surface">Bella Napoli</span>
+          <p class="font-sans text-body-md text-on-surface-variant max-w-xs mt-4">
+            Elevando el arte de la pizza mediante el compromiso inquebrantable con ingredientes y técnica auténticos.
+          </p>
+        </div>
+        <div class="flex flex-col gap-3 md:items-center">
+          <h4 class="font-sans text-label-caps text-brand-cream mb-2 opacity-50">EXPLORA</h4>
+          <a class="font-sans text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#menu">Menú</a>
+          <a class="font-sans text-body-md text-on-surface-variant hover:text-primary transition-colors" href="/order">Pedir</a>
+          <a class="font-sans text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#about">Historia</a>
+        </div>
+        <div class="flex flex-col gap-4 md:items-end">
+          <h4 class="font-sans text-label-caps text-brand-cream mb-2 opacity-50 text-left md:text-right w-full">HORARIO</h4>
+          <p class="font-sans text-body-md text-on-surface-variant md:text-right">Pedidos de 17:00 a 23:59</p>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-outline-variant/30 px-margin-mobile md:px-margin-desktop py-6 text-center">
+      <p class="font-sans text-label-caps text-on-surface-variant opacity-60">© 2026 BELLA NAPOLI · TODOS LOS DERECHOS RESERVADOS</p>
     </div>
   </footer>
 
@@ -168,13 +236,13 @@
       list.innerHTML = '';
 
       if (notifications.length === 0) {
-        list.innerHTML = '<li class="p-3 text-sm text-stone-400">No tienes notificaciones.</li>';
+        list.innerHTML = '<li class="p-3 text-sm text-on-surface-variant/70">No tienes notificaciones.</li>';
         return;
       }
 
       notifications.forEach(n => {
         const li = document.createElement('li');
-        li.className = 'px-4 py-3 hover:bg-stone-50 transition cursor-pointer';
+        li.className = 'px-4 py-3 hover:bg-surface-container-low transition cursor-pointer';
         li.dataset.id = n.id;
         li.dataset.orderId = n.order_id;
 
@@ -183,8 +251,8 @@
         li.innerHTML = `
           <div class="flex items-start justify-between">
             <div class="flex-1">
-              <p class="text-sm text-stone-700">${n.message}</p>
-              <span class="text-xs text-stone-400">${new Date(n.created_at).toLocaleString()}</span>
+              <p class="text-sm text-on-surface">${n.message}</p>
+              <span class="text-xs text-on-surface-variant/70">${new Date(n.created_at).toLocaleString()}</span>
             </div>
             <button class="delete-notification ml-2 text-red-400 hover:text-red-600" data-id="${n.id}">✕</button>
           </div>
